@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #111111;
+  --card-border: #1f1f1f;
+  --muted: #8a8a8a;
+  --brand-blue: #0070f3;
+  --brand-purple: #7928ca;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Brand colors */
+  --color-brand-blue: #0070f3;
+  --color-brand-purple: #7928ca;
+
+  /* Surface colors */
+  --color-surface: #000000;
+  --color-surface-card: #111111;
+  --color-surface-elevated: #161616;
+
+  /* Custom neutral extensions */
+  --color-neutral-950: #0a0a0a;
+  --color-neutral-900: #111111;
+  --color-neutral-800: #1f1f1f;
+  --color-neutral-700: #2e2e2e;
+  --color-neutral-600: #3d3d3d;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #0070f3, #7928ca);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass card utility */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #1f1f1f;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2e2e2e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d3d3d;
+}

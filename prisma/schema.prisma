@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String   @unique
+  password        String
+  role            String   @default("siswa")
+  isActive        Boolean  @default(true) @map("is_active")
+  kelas           String?
+  kelompok        String?
+  anggotaKelompok String?  @map("anggota_kelompok")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  peminjamans          Peminjaman[] @relation("UserPeminjaman")
+  verifiedPeminjamans  Peminjaman[] @relation("VerifiedBy")
+  returnedPeminjamans  Peminjaman[] @relation("ReturnedBy")
+  cancelledPeminjamans Peminjaman[] @relation("CancelledBy")
+
+  @@map("users")
+}
+
+model Alat {
+  id            Int       @id @default(autoincrement())
+  kode          String    @unique
+  nama          String
+  kategori      String
+  stok          Int       @default(0)
+  lokasi        String    @default("")
+  deskripsi     String?
+  foto          String?
+  tanggalEos    DateTime? @map("tanggal_eos")
+  tanggalEol    DateTime? @map("tanggal_eol")
+  keteranganEos String?   @map("keterangan_eos")
+  keteranganEol String?   @map("keterangan_eol")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  peminjamanDetails PeminjamanDetail[]
+
+  @@map("alats")
+}
+
+model Peminjaman {
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @map("user_id")
+  totalItems          Int       @default(0) @map("total_items")
+  status              String    @default("menunggu_verifikasi")
+  tanggalPinjam       DateTime  @default(now()) @map("tanggal_pinjam")
+  tanggalBatasKembali DateTime? @map("tanggal_batas_kembali")
+  tanggalKembali      DateTime? @map("tanggal_kembali")
+  tanggalVerifikasi   DateTime? @map("tanggal_verifikasi")
+  tanggalBatal        DateTime? @map("tanggal_batal")
+  keperluan           String
+  catatan             String?
+  catatanPengembalian String?   @map("catatan_pengembalian")
+  alasanPembatalan    String?   @map("alasan_pembatalan")
+  verifiedBy          Int?      @map("verified_by")
+  returnedBy          Int?      @map("returned_by")
+  cancelledBy         Int?      @map("cancelled_by")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user            User  @relation("UserPeminjaman", fields: [userId], references: [id])
+  verifiedByUser  User? @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+  returnedByUser  User? @relation("ReturnedBy", fields: [returnedBy], references: [id])
+  cancelledByUser User? @relation("CancelledBy", fields: [cancelledBy], references: [id])
+  details         PeminjamanDetail[]
+
+  @@map("peminjamans")
+}
+
+model PeminjamanDetail {
+  id           Int      @id @default(autoincrement())
+  peminjamanId Int      @map("peminjaman_id")
+  alatId       Int      @map("alat_id")
+  jumlah       Int
+  keterangan   String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  peminjaman Peminjaman @relation(fields: [peminjamanId], references: [id], onDelete: Cascade)
+  alat       Alat       @relation(fields: [alatId], references: [id])
+
+  @@map("peminjaman_details")
+}
