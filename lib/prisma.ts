@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { PrismaClient } from '@/lib/generated/prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 
@@ -18,12 +17,8 @@ function buildAdapter() {
     return new PrismaLibSql({ url: raw, authToken })
   }
 
-  // Local SQLite file (dev). Resolve to absolute path so cwd changes don't break it.
-  const dbFile = raw.replace(/^file:/, '')
-  const absoluteDbPath = path.isAbsolute(dbFile)
-    ? dbFile
-    : path.resolve(process.cwd(), dbFile)
-  return new PrismaLibSql({ url: `file:${absoluteDbPath}` })
+  // Local SQLite file (dev). libSQL accepts file:./xxx relative to cwd.
+  return new PrismaLibSql({ url: raw })
 }
 
 export const prisma =

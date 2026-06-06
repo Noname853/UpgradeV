@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { PrismaClient } from '../lib/generated/prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import bcrypt from 'bcryptjs'
@@ -10,9 +9,7 @@ function buildAdapter() {
     if (!authToken) throw new Error('DATABASE_AUTH_TOKEN is required for remote libSQL')
     return new PrismaLibSql({ url: raw, authToken })
   }
-  const dbFile = raw.replace(/^file:/, '')
-  const absoluteDbPath = path.isAbsolute(dbFile) ? dbFile : path.resolve(process.cwd(), dbFile)
-  return new PrismaLibSql({ url: `file:${absoluteDbPath}` })
+  return new PrismaLibSql({ url: raw })
 }
 
 const prisma = new PrismaClient({ adapter: buildAdapter() })

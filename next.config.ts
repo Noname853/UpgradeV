@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import path from "node:path";
 
 // CSP: allow same-origin scripts/styles + Next.js inline scripts.
 // Tailwind v4 needs 'unsafe-inline' for styles. 'unsafe-eval' is required by
@@ -19,9 +18,6 @@ const csp = [
 
 const nextConfig: NextConfig = {
   output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
   allowedDevOrigins: [
     '192.168.*.*',
     '10.*.*.*',
