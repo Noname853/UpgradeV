@@ -24,7 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // (the login form's server action has its own limiter). Skipped when
         // no client IP is available so a shared bucket can't lock everyone out.
         const ip = clientIp(request.headers)
-        if (ip !== 'unknown' && !checkRateLimit(`auth:${ip}`, 10, 5 * 60_000)) {
+        if (ip !== 'unknown' && !(await checkRateLimit(`auth:${ip}`, 10, 5 * 60_000))) {
           return null
         }
 

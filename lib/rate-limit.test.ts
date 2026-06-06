@@ -10,35 +10,35 @@ describe('checkRateLimit', () => {
     vi.useRealTimers()
   })
 
-  it('allows requests up to the limit', () => {
+  it('allows requests up to the limit', async () => {
     const key = `test-allow-${Math.random()}`
-    expect(checkRateLimit(key, 3, 1000)).toBe(true)
-    expect(checkRateLimit(key, 3, 1000)).toBe(true)
-    expect(checkRateLimit(key, 3, 1000)).toBe(true)
+    expect(await checkRateLimit(key, 3, 1000)).toBe(true)
+    expect(await checkRateLimit(key, 3, 1000)).toBe(true)
+    expect(await checkRateLimit(key, 3, 1000)).toBe(true)
   })
 
-  it('blocks the request that exceeds the limit', () => {
+  it('blocks the request that exceeds the limit', async () => {
     const key = `test-block-${Math.random()}`
-    checkRateLimit(key, 2, 1000)
-    checkRateLimit(key, 2, 1000)
-    expect(checkRateLimit(key, 2, 1000)).toBe(false)
+    await checkRateLimit(key, 2, 1000)
+    await checkRateLimit(key, 2, 1000)
+    expect(await checkRateLimit(key, 2, 1000)).toBe(false)
   })
 
-  it('resets the counter after the window expires', () => {
+  it('resets the counter after the window expires', async () => {
     const key = `test-reset-${Math.random()}`
-    checkRateLimit(key, 1, 1000)
-    expect(checkRateLimit(key, 1, 1000)).toBe(false)
+    await checkRateLimit(key, 1, 1000)
+    expect(await checkRateLimit(key, 1, 1000)).toBe(false)
 
     vi.advanceTimersByTime(1001)
-    expect(checkRateLimit(key, 1, 1000)).toBe(true)
+    expect(await checkRateLimit(key, 1, 1000)).toBe(true)
   })
 
-  it('tracks different keys independently', () => {
+  it('tracks different keys independently', async () => {
     const a = `test-a-${Math.random()}`
     const b = `test-b-${Math.random()}`
-    expect(checkRateLimit(a, 1, 1000)).toBe(true)
-    expect(checkRateLimit(a, 1, 1000)).toBe(false)
-    expect(checkRateLimit(b, 1, 1000)).toBe(true)
+    expect(await checkRateLimit(a, 1, 1000)).toBe(true)
+    expect(await checkRateLimit(a, 1, 1000)).toBe(false)
+    expect(await checkRateLimit(b, 1, 1000)).toBe(true)
   })
 })
 

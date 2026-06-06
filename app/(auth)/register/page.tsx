@@ -15,7 +15,7 @@ export default async function RegisterPage({
   async function registerAction(formData: FormData) {
     'use server'
     const ip = clientIp(await headers())
-    if (!checkRateLimit(`register:${ip}`, 5, 10 * 60_000)) {
+    if (!(await checkRateLimit(`register:${ip}`, 5, 10 * 60_000))) {
       redirect('/register?error=ratelimit')
     }
 

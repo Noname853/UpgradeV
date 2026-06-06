@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
 const protectedPaths = ['/dashboard', '/alat', '/peminjaman', '/users', '/laporan']
 const authPaths = ['/login', '/register']
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   const isProtected = protectedPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
   const isAuth = authPaths.some((p) => pathname.startsWith(p))
 
-  // Check for NextAuth session cookie (name can vary)
-  const sessionToken =
-    req.cookies.get('authjs.session-token')?.value ||
-    req.cookies.get('__Secure-authjs.session-token')?.value ||
-    req.cookies.get('next-auth.session-token')?.value ||
-    req.cookies.get('__Secure-next-auth.session-token')?.value
+  if (!isProtected && !isAuth) return NextResponse.next()
 
-  const isLoggedIn = !!sessionToken
+  // Verify JWT signature (not just cookie presence). Returns null on a
+  // missing/expired/forged token.
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    salt:
+      process.env.NODE_ENV === 'production'
+        ? '__Secure-authjs.session-token'
+        : 'authjs.session-token',
+  })
+  const isLoggedIn = !!token
 
   if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL('/login', req.url))

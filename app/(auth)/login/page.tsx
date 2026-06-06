@@ -15,7 +15,7 @@ export default async function LoginPage({
   async function loginAction(formData: FormData) {
     'use server'
     const ip = clientIp(await headers())
-    if (!checkRateLimit(`login:${ip}`, 10, 5 * 60_000)) {
+    if (!(await checkRateLimit(`login:${ip}`, 10, 5 * 60_000))) {
       redirect('/login?error=ratelimit')
     }
     try {

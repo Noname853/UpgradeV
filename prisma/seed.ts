@@ -3,18 +3,44 @@ import { PrismaClient } from '../lib/generated/prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import bcrypt from 'bcryptjs'
 
-const absoluteDbPath = path.resolve(process.cwd(), 'dev.db')
-const url = `file:${absoluteDbPath}`
+function buildAdapter() {
+  const raw = process.env.DATABASE_URL ?? 'file:./dev.db'
+  if (/^(libsql|https?):\/\//i.test(raw)) {
+    const authToken = process.env.DATABASE_AUTH_TOKEN
+    if (!authToken) throw new Error('DATABASE_AUTH_TOKEN is required for remote libSQL')
+    return new PrismaLibSql({ url: raw, authToken })
+  }
+  const dbFile = raw.replace(/^file:/, '')
+  const absoluteDbPath = path.isAbsolute(dbFile) ? dbFile : path.resolve(process.cwd(), dbFile)
+  return new PrismaLibSql({ url: `file:${absoluteDbPath}` })
+}
 
-const prisma = new PrismaClient({
-  adapter: new PrismaLibSql({ url }),
-})
+const prisma = new PrismaClient({ adapter: buildAdapter() })
 
 async function main() {
+  // Guardrail: never seed default credentials into production unless an
+  // operator explicitly opts in. Demo accounts in prod are how breaches happen.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PROD_SEED !== 'true') {
+    throw new Error(
+      'Refusing to seed in production. Set ALLOW_PROD_SEED=true and provide SEED_ADMIN_PASSWORD / SEED_SISWA_PASSWORD to override.',
+    )
+  }
+
   console.log('Seeding database...')
 
-  const adminPassword = await bcrypt.hash('admin123', 10)
-  const siswaPassword = await bcrypt.hash('siswa123', 10)
+  const adminPlain = process.env.SEED_ADMIN_PASSWORD ?? 'admin123'
+  const siswaPlain = process.env.SEED_SISWA_PASSWORD ?? 'siswa123'
+
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.SEED_ADMIN_PASSWORD || !process.env.SEED_SISWA_PASSWORD) {
+      throw new Error(
+        'SEED_ADMIN_PASSWORD and SEED_SISWA_PASSWORD must be set when seeding in production',
+      )
+    }
+  }
+
+  const adminPassword = await bcrypt.hash(adminPlain, 10)
+  const siswaPassword = await bcrypt.hash(siswaPlain, 10)
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@tkj.com' },
@@ -183,8 +209,10 @@ async function main() {
   }
 
   console.log('Seeding complete!')
-  console.log(`Admin: admin@tkj.com / admin123`)
-  console.log(`Siswa: budi@tkj.com / siswa123`)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Admin: admin@tkj.com / ${adminPlain}`)
+    console.log(`Siswa: budi@tkj.com / ${siswaPlain}`)
+  }
 }
 
 main()
