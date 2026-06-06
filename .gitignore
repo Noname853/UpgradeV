@@ -50,3 +50,11 @@ next-env.d.ts
 *.db-journal
 *.db-shm
 *.db-wal
+
+# DB backups
+/backups/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
