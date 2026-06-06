@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -31,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     })
     return NextResponse.json(user)
   } catch (err) {
-    console.error('[PUT /api/users/[id]]', err)
+    logger.error({ err }, '[PUT /api/users/[id]]')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -71,7 +72,7 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
     })
     return NextResponse.json(updated)
   } catch (err) {
-    console.error('[PATCH /api/users/[id]]', err)
+    logger.error({ err }, '[PATCH /api/users/[id]]')
     return NextResponse.json({ error: 'Gagal mengubah status user' }, { status: 500 })
   }
 }
@@ -108,7 +109,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('[DELETE /api/users/[id]]', err)
+    logger.error({ err }, '[DELETE /api/users/[id]]')
     return NextResponse.json({ error: 'Gagal menghapus user' }, { status: 500 })
   }
 }

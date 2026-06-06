@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+.next
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.local
+.env*.local
+Dockerfile
+.dockerignore

@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(user, { status: 201 })
   } catch (err) {
-    console.error('[POST /api/users]', err)
+    logger.error({ err }, '[POST /api/users]')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

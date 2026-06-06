@@ -21,6 +21,19 @@ async function importAction(formData: FormData) {
   const file = formData.get('file') as File | null
   if (!file || file.size === 0) redirect('/alat/import?error=no-file')
 
+  const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 // 5 MB
+  if (file.size > MAX_UPLOAD_BYTES) redirect('/alat/import?error=too-large')
+
+  const ALLOWED_MIME = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+  ]
+  if (!ALLOWED_MIME.includes(file.type)) redirect('/alat/import?error=invalid-file')
+
+  // Also guard by extension in case the browser sends a wrong MIME type
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  if (ext !== 'xlsx' && ext !== 'xls') redirect('/alat/import?error=invalid-file')
+
   const arrayBuffer = await file.arrayBuffer()
   const workbook = new ExcelJS.Workbook()
 
@@ -142,13 +155,15 @@ export default async function ImportAlatPage({
   const errorMsg =
     sp.error === 'no-file'
       ? 'File belum dipilih'
-      : sp.error === 'invalid-file'
-        ? 'Format file tidak valid. Pastikan file .xlsx'
-        : sp.error === 'empty'
-          ? 'File Excel kosong'
-          : sp.error === 'missing-columns'
-            ? `Kolom wajib hilang: ${sp.cols ?? ''}`
-            : null
+      : sp.error === 'too-large'
+        ? 'File terlalu besar. Maksimal 5 MB'
+        : sp.error === 'invalid-file'
+          ? 'Format file tidak valid. Pastikan file .xlsx'
+          : sp.error === 'empty'
+            ? 'File Excel kosong'
+            : sp.error === 'missing-columns'
+              ? `Kolom wajib hilang: ${sp.cols ?? ''}`
+              : null
 
   return (
     <div className="space-y-6 pb-8">

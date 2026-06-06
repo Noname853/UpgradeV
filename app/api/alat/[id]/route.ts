@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -49,7 +50,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     })
     return NextResponse.json(alat)
   } catch (err) {
-    console.error('[PUT /api/alat/[id]]', err)
+    logger.error({ err }, '[PUT /api/alat/[id]]')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -79,7 +80,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.alat.delete({ where: { id: numId } })
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('[DELETE /api/alat/[id]]', err)
+    logger.error({ err }, '[DELETE /api/alat/[id]]')
     return NextResponse.json({ error: 'Gagal menghapus alat' }, { status: 500 })
   }
 }

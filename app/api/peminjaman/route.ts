@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 class StokError extends Error {}
 
@@ -127,7 +128,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof StokError) {
       return NextResponse.json({ error: err.message }, { status: 400 })
     }
-    console.error('[POST /api/peminjaman]', err)
+    logger.error({ err }, '[POST /api/peminjaman]')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -33,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json(updated)
   } catch (err) {
-    console.error('[PATCH /api/peminjaman/[id]/return]', err)
+    logger.error({ err }, '[PATCH /api/peminjaman/[id]/return]')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
