@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { auth } from '@/lib/auth'
 
 const protectedPaths = ['/dashboard', '/alat', '/peminjaman', '/users', '/laporan']
 const authPaths = ['/login', '/register']
@@ -11,25 +11,8 @@ export async function proxy(req: NextRequest) {
 
   if (!isProtected && !isAuth) return NextResponse.next()
 
-  // Verify JWT signature (not just cookie presence). Returns null on a
-  // missing/expired/forged token.
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-    salt:
-      process.env.NODE_ENV === 'production'
-        ? '__Secure-authjs.session-token'
-        : 'authjs.session-token',
-  })
-  const isLoggedIn = !!token
-
-  if (isProtected) {
-    console.log('proxy:debug', {
-      pathname,
-      hasToken: isLoggedIn,
-      cookies: req.cookies.getAll().map((c) => c.name),
-    })
-  }
+  const session = await auth()
+  const isLoggedIn = !!session?.user
 
   if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL('/login', req.url))
