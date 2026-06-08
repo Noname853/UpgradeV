@@ -26,6 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // no client IP is available so a shared bucket can't lock everyone out.
         const ip = clientIp(request.headers)
         if (ip !== 'unknown' && !(await checkRateLimit(`auth:${ip}`, 10, 5 * 60_000))) {
+          logger.warn({ ip }, 'auth:rate_limit')
           return null
         }
 
@@ -36,7 +37,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
           .safeParse(credentials)
 
-        if (!parsed.success) return null
+        if (!parsed.success) {
+          logger.warn('auth:invalid_credentials_format')
+          return null
+        }
 
         let user
         try {
@@ -48,10 +52,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null
         }
 
-        if (!user) return null
-        if (!user.isActive) return null
+        if (!user) {
+          logger.warn({ email: parsed.data.email }, 'auth:user_not_found')
+          return null
+        }
+        if (!user.isActive) {
+          logger.warn({ email: parsed.data.email, isActive: user.isActive }, 'auth:user_inactive')
+          return null
+        }
         const valid = await bcrypt.compare(parsed.data.password, user.password)
-        if (!valid) return null
+        if (!valid) {
+          logger.warn({ email: parsed.data.email }, 'auth:invalid_password')
+          return null
+        }
 
         return {
           id: String(user.id),
