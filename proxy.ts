@@ -23,6 +23,14 @@ export async function proxy(req: NextRequest) {
   })
   const isLoggedIn = !!token
 
+  if (isProtected) {
+    console.log('proxy:debug', {
+      pathname,
+      hasToken: isLoggedIn,
+      cookies: req.cookies.getAll().map((c) => c.name),
+    })
+  }
+
   if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
