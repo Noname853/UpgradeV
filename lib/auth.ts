@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, clientIp } from '@/lib/rate-limit'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const authSecret = process.env.AUTH_SECRET
@@ -37,9 +38,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!parsed.success) return null
 
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
-        })
+        let user
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: parsed.data.email },
+          })
+        } catch (err) {
+          logger.error({ err }, 'auth:authorize db error')
+          return null
+        }
 
         if (!user) return null
         if (!user.isActive) return null
