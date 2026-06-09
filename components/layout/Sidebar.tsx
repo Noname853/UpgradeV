@@ -44,7 +44,7 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'relative flex h-full flex-col bg-neutral-950 transition-all duration-200',
+        'relative z-30 flex h-full flex-col bg-neutral-950 transition-all duration-200',
         !isMobile && 'border-r border-neutral-800',
         isMobile ? 'w-full' : collapsed ? 'w-16' : 'w-56'
       )}
