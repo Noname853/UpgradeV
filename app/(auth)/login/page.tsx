@@ -3,6 +3,7 @@ import { AuthError } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { checkRateLimit, clientIp } from '@/lib/rate-limit'
+import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
 export default async function LoginPage({
@@ -18,10 +19,26 @@ export default async function LoginPage({
     if (!(await checkRateLimit(`login:${ip}`, 10, 5 * 60_000))) {
       redirect('/login?error=ratelimit')
     }
+
+    const email = (formData.get('email') as string)?.trim().toLowerCase()
+    const password = formData.get('password') as string
+
+    // Cek status akun dulu agar bisa beri pesan spesifik bila nonaktif.
+    // Kredensial tetap divalidasi penuh oleh signIn di bawah.
+    if (email) {
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: { isActive: true },
+      })
+      if (user && !user.isActive) {
+        redirect('/login?error=inactive')
+      }
+    }
+
     try {
       await signIn('credentials', {
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
+        email,
+        password,
         redirectTo: '/dashboard',
       })
     } catch (error) {
@@ -69,6 +86,8 @@ export default async function LoginPage({
           <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {sp.error === 'ratelimit'
               ? 'Terlalu banyak percobaan login. Coba lagi dalam beberapa menit.'
+              : sp.error === 'inactive'
+              ? 'Akun Anda Nonaktif. Hubungi admin untuk mengaktifkan kembali.'
               : 'Email atau password salah'}
           </p>
         )}
