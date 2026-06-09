@@ -62,10 +62,11 @@ export default function BuatPeminjamanPage() {
   const [searchResults, setSearchResults] = useState<AlatOption[]>([])
   const [searchIdx, setSearchIdx] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusWaktu, setStatusWaktu] = useState<ReturnType<typeof cekJamOperasional> | null>(() => cekJamOperasional())
+  const [statusWaktu, setStatusWaktu] = useState<ReturnType<typeof cekJamOperasional> | null>(null)
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
 
   useEffect(() => {
+    setStatusWaktu(cekJamOperasional())
     const interval = setInterval(() => setStatusWaktu(cekJamOperasional()), 60_000)
     return () => clearInterval(interval)
   }, [])
