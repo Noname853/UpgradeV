@@ -5,7 +5,7 @@ import type { NextConfig } from "next";
 // Next.js dev mode only — strip it in a prod-specific override if needed.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
