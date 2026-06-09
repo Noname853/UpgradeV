@@ -55,7 +55,7 @@ export function Topbar({ userName, userRole, onMenuToggle }: TopbarProps) {
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-1 w-48 rounded-xl border border-neutral-800 bg-neutral-950 py-1 shadow-xl">
+          <div className="absolute right-0 mt-1 z-50 w-48 rounded-xl border border-neutral-800 bg-neutral-950 py-1 shadow-xl">
             <div className="border-b border-neutral-800 px-3 py-2">
               <p className="text-sm font-medium text-white">{userName}</p>
               <p className="text-xs text-neutral-500 capitalize">{userRole}</p>
