@@ -34,6 +34,16 @@ export function ProfilForm({ kelompok: initialKelompok, anggota: initialAnggota 
   }
 
   async function handleSave() {
+    // Sertakan nama yang masih ada di kotak input agar tidak hilang saat
+    // user lupa klik "Tambah" sebelum menyimpan.
+    const pending = newAnggota.trim()
+    const finalAnggota =
+      pending && !anggota.includes(pending) ? [...anggota, pending] : anggota
+    if (finalAnggota !== anggota) {
+      setAnggota(finalAnggota)
+      setNewAnggota('')
+    }
+
     setSaving(true)
     setError('')
     setSaved(false)
@@ -41,7 +51,7 @@ export function ProfilForm({ kelompok: initialKelompok, anggota: initialAnggota 
       const res = await fetch('/api/profil', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kelompok, anggotaKelompok: anggota }),
+        body: JSON.stringify({ kelompok, anggotaKelompok: finalAnggota }),
       })
       if (!res.ok) {
         const d = await res.json()
