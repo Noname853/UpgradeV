@@ -9,22 +9,30 @@ import { Wrench, Users, PackageCheck, Clock, AlertTriangle, CheckCircle } from '
 import Link from 'next/link'
 
 async function getChartData() {
-  const months = []
   const now = new Date()
-  for (let i = 5; i >= 0; i--) {
+
+  // Susun dulu rentang 6 bulan, lalu jalankan SEMUA query sekaligus dalam satu
+  // Promise.all. Sebelumnya tiap bulan menunggu (await) di dalam loop, jadi 6
+  // round-trip berurutan ke database. Sekarang 12 count berjalan paralel.
+  const ranges = Array.from({ length: 6 }, (_, idx) => {
+    const i = 5 - idx
     const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
-    const [peminjaman, dikembalikan] = await Promise.all([
+    return { start, end }
+  })
+
+  const counts = await Promise.all(
+    ranges.flatMap(({ start, end }) => [
       prisma.peminjaman.count({ where: { tanggalPinjam: { gte: start, lte: end } } }),
       prisma.peminjaman.count({ where: { status: 'dikembalikan', tanggalKembali: { gte: start, lte: end } } }),
-    ])
-    months.push({
-      bulan: start.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
-      peminjaman,
-      dikembalikan,
-    })
-  }
-  return months
+    ]),
+  )
+
+  return ranges.map(({ start }, idx) => ({
+    bulan: start.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
+    peminjaman: counts[idx * 2],
+    dikembalikan: counts[idx * 2 + 1],
+  }))
 }
 
 export default async function DashboardPage() {
