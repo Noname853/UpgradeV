@@ -67,7 +67,7 @@ export default async function LoginPage({
             name="email"
             type="email"
             required
-            placeholder="admin@tkj.com"
+            placeholder="nama@email.com"
             className="w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
           />
         </div>
