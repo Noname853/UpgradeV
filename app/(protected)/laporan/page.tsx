@@ -70,7 +70,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
           </select>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-neutral-400">Dari Tanggal</label>
+              <label className="mb-1.5 block text-center text-xs font-medium text-neutral-400">Dari Tanggal</label>
               <input
                 name="dari"
                 type="date"
@@ -79,7 +79,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-neutral-400">Sampai Tanggal</label>
+              <label className="mb-1.5 block text-center text-xs font-medium text-neutral-400">Sampai Tanggal</label>
               <input
                 name="sampai"
                 type="date"
