@@ -69,18 +69,24 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
             <option value="dibatalkan">Dibatalkan</option>
           </select>
           <div className="grid grid-cols-2 gap-3">
-            <input
-              name="dari"
-              type="date"
-              defaultValue={sp.dari}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-blue-500"
-            />
-            <input
-              name="sampai"
-              type="date"
-              defaultValue={sp.sampai}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-blue-500"
-            />
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-neutral-400">Dari Tanggal</label>
+              <input
+                name="dari"
+                type="date"
+                defaultValue={sp.dari}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-neutral-400">Sampai Tanggal</label>
+              <input
+                name="sampai"
+                type="date"
+                defaultValue={sp.sampai}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-blue-500"
+              />
+            </div>
           </div>
           <button
             type="submit"
