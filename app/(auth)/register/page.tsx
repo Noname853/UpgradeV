@@ -157,7 +157,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-center text-sm text-neutral-300">Pilih Tingkat</label>
+          <label className="mb-1.5 block text-sm text-neutral-300">Pilih Kelas</label>
           <div className="flex gap-2">
             {TINGKAT.map((p) => (
               <PillButton key={p.val} active={tingkat === p.val} onClick={() => setTingkat(p.val)}>
@@ -168,7 +168,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-center text-sm text-neutral-300">Pilih Jurusan</label>
+          <label className="mb-1.5 block text-sm text-neutral-300">Pilih Jurusan</label>
           <div className="flex gap-2">
             {JURUSAN.map((p) => (
               <PillButton key={p.val} active={jurusan === p.val} onClick={() => setJurusan(p.val)}>
@@ -179,7 +179,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-center text-sm text-neutral-300">Pilih Rombel</label>
+          <label className="mb-1.5 block text-sm text-neutral-300">Pilih Rombel</label>
           <div className="flex flex-wrap gap-2">
             {ROMBEL.map((p) => (
               <PillButton key={p.val} active={rombel === p.val} onClick={() => setRombel(p.val)}>
