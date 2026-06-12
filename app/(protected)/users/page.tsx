@@ -26,7 +26,15 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const where = {
     role: 'siswa',
     ...(showAll ? {} : { isActive: true }),
-    ...(search ? { OR: [{ name: { contains: search } }, { email: { contains: search } }] } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search } },
+            { email: { contains: search } },
+            { kelas: { contains: search } },
+          ],
+        }
+      : {}),
   }
 
   const [users, total] = await Promise.all([
@@ -76,7 +84,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               <input
                 name="search"
                 defaultValue={search}
-                placeholder="Cari nama atau email..."
+                placeholder="Cari nama, email, atau kelas..."
                 className="w-full rounded-lg border border-neutral-700 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white placeholder-neutral-600 outline-none focus:border-blue-500"
               />
               {showAll && <input type="hidden" name="all" value="true" />}
@@ -87,6 +95,14 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             >
               Cari
             </button>
+            {search && (
+              <Link
+                href={`/users${showAll ? '?all=true' : ''}`}
+                className="rounded-lg border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-red-500/50 hover:text-red-400"
+              >
+                Reset
+              </Link>
+            )}
           </form>
           <Link
             href={buildHref({ all: showAll ? '' : 'true', page: '1' }).replace('all=&', '').replace('?all=&', '?')}
