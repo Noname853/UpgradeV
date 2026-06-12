@@ -1,147 +1,486 @@
 import Link from 'next/link'
-import { Wrench, PackageCheck, FileBarChart2, Shield, Zap, Users } from 'lucide-react'
+
+const rules = [
+  {
+    n: '01',
+    title: 'AJUKAN VIA SISTEM',
+    desc: 'Login dengan akun siswa, lalu ajukan peminjaman melalui dashboard. Peminjaman manual tidak dilayani.',
+    hex: '#5c84ff',
+    rgb: '92,132,255',
+  },
+  {
+    n: '02',
+    title: 'TUNGGU VERIFIKASI',
+    desc: 'Alat baru bisa diambil setelah pengajuan disetujui admin. Status persetujuan tampil real-time di akunmu.',
+    hex: '#22d3ee',
+    rgb: '34,211,238',
+  },
+  {
+    n: '03',
+    title: 'RAWAT ALAT',
+    desc: 'Gunakan alat sesuai fungsinya dan jaga kebersihannya. Dilarang memindahtangankan ke siswa lain.',
+    hex: '#2dd4a0',
+    rgb: '45,212,160',
+  },
+  {
+    n: '04',
+    title: 'KEMBALIKAN TEPAT WAKTU',
+    desc: 'Kembalikan alat sesuai jadwal dalam kondisi lengkap. Keterlambatan dapat membatasi peminjaman berikutnya.',
+    hex: '#ffb43d',
+    rgb: '245,166,35',
+  },
+  {
+    n: '05',
+    title: 'TANGGUNG JAWAB',
+    desc: 'Kerusakan atau kehilangan menjadi tanggung jawab peminjam sesuai ketentuan penggantian yang berlaku.',
+    hex: '#b07cff',
+    rgb: '168,85,247',
+  },
+]
+
+const stats = [
+  { value: '2 ROLE', label: 'ADMIN & SISWA', hex: '#5c84ff', rgb: '92,132,255' },
+  { value: 'REAL-TIME', label: 'STOK TERSEDIA', hex: '#c084fc', rgb: '168,85,247' },
+  { value: '100%', label: 'OPEN SOURCE', hex: '#b07cff', rgb: '168,85,247' },
+]
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-neutral-800 bg-black/80 px-6 backdrop-blur-md">
-        <span className="gradient-text text-lg font-bold tracking-tight">Iventaris_TKJ</span>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="rounded-lg px-4 py-1.5 text-sm text-neutral-300 transition hover:text-white"
-          >
-            Masuk
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-lg bg-white px-4 py-1.5 text-sm font-medium text-black transition hover:bg-neutral-200"
-          >
-            Daftar
-          </Link>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#04070c',
+        color: '#e8f2f7',
+        fontFamily: "'Rajdhani', sans-serif",
+        overflowX: 'hidden',
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+        @keyframes tkjRise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes tkjScan { 0% { transform: translateY(-120px); opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { transform: translateY(860px); opacity: 0; } }
+        @keyframes tkjGrid { from { transform: translateY(0); } to { transform: translateY(64px); } }
+        @keyframes tkjPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+        @keyframes tkjShimmer { from { transform: translateX(-130%) skewX(-20deg); } to { transform: translateX(330%) skewX(-20deg); } }
+        @keyframes tkjBlink { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.4; } }
+        .tkj-card { transition: transform 0.25s, border-color 0.25s; }
+        .tkj-card:hover { transform: translateY(-5px); border-color: var(--hc); }
+        .tkj-cta { transition: transform 0.2s; }
+        .tkj-cta:hover { transform: translateY(-3px); }
+        .tkj-cta2 { transition: background 0.2s, transform 0.2s; }
+        .tkj-cta2:hover { background: rgba(92,132,255,0.12); transform: translateY(-3px); }
+        @media (prefers-reduced-motion: reduce) {
+          .tkj-card, .tkj-cta, .tkj-cta2, [data-anim] { animation: none !important; transition: none !important; }
+        }
+      `}</style>
+
+      {/* ===== NAVBAR (garis aksen) ===== */}
+      <div
+        style={{
+          height: 2,
+          background:
+            'linear-gradient(90deg, transparent, #5c84ff 30%, #a855f7 70%, transparent)',
+          opacity: 0.6,
+        }}
+      />
+
+      {/* ===== HERO ===== */}
+      <section
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          padding: '96px 20px 110px',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          data-anim
+          style={{
+            position: 'absolute',
+            inset: '-64px 0 0 0',
+            backgroundImage:
+              'linear-gradient(rgba(92,132,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(92,132,255,0.06) 1px, transparent 1px)',
+            backgroundSize: '64px 64px',
+            animation: 'tkjGrid 6s linear infinite',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '45%',
+            width: 640,
+            height: 640,
+            transform: 'translate(-50%, -50%)',
+            background:
+              'radial-gradient(circle, rgba(92,132,255,0.12) 0%, rgba(168,85,247,0.06) 40%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          data-anim
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 90,
+            background:
+              'linear-gradient(180deg, transparent, rgba(92,132,255,0.07) 50%, rgba(92,132,255,0.18) 98%, rgba(92,132,255,0.5) 100%)',
+            animation: 'tkjScan 7s linear infinite',
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Badge */}
+        <div
+          data-anim
+          style={{
+            position: 'relative',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 28,
+            padding: '8px 20px',
+            border: '1px solid rgba(92,132,255,0.35)',
+            background: 'rgba(92,132,255,0.05)',
+            clipPath:
+              'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)',
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: 2.5,
+            color: '#b9c5ff',
+            animation: 'tkjRise 0.6s ease-out both',
+          }}
+        >
+          <span
+            data-anim
+            style={{
+              display: 'inline-block',
+              width: 8,
+              height: 8,
+              background: 'rgb(43,255,136)',
+              clipPath: 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)',
+              animation: 'tkjPulse 1.8s ease-in-out infinite',
+              boxShadow: '0 0 10px rgba(43,255,136,0.8)',
+            }}
+          />
+          SISTEM PEMINJAMAN MODERN TKJ
         </div>
-      </nav>
 
-      {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center overflow-hidden px-6 py-28 text-center md:py-40">
-        {/* Background glow */}
-        <div className="absolute left-1/2 top-1/2 -z-10 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/10 blur-[120px]" />
-        <div className="absolute left-1/4 top-1/3 -z-10 h-[400px] w-[400px] rounded-full bg-purple-600/8 blur-[100px]" />
-
-        <div className="mb-5 inline-flex items-center rounded-full border border-neutral-800 bg-white/[0.03] px-4 py-1.5 text-sm text-neutral-400">
-          <span className="mr-2 inline-block h-2 w-2 rounded-full bg-green-400" />
-          Sistem Inventaris Modern TKJ
-        </div>
-
-        <h1 className="max-w-3xl text-5xl font-extrabold leading-tight tracking-tight md:text-7xl">
-          Kelola Inventaris{' '}
-          <span className="gradient-text">TKJ</span>{' '}
+        {/* Title */}
+        <h1
+          data-anim
+          style={{
+            position: 'relative',
+            margin: 0,
+            maxWidth: 820,
+            fontFamily: "'Orbitron', sans-serif",
+            fontWeight: 900,
+            fontSize: 'clamp(38px, 8vw, 78px)',
+            lineHeight: 1.08,
+            letterSpacing: 1,
+            color: '#f0f8fc',
+            textTransform: 'uppercase',
+            animation: 'tkjRise 0.6s ease-out 0.12s both',
+          }}
+        >
+          wellcome to&nbsp;
+          <span
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              marginLeft: 6,
+              padding: '2px 18px 6px',
+              color: 'rgb(4,7,12)',
+              background: 'linear-gradient(135deg, rgb(92,132,255), rgb(168,85,247))',
+              clipPath: 'polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%)',
+              overflow: 'hidden',
+              verticalAlign: 'baseline',
+            }}
+          >
+            TKJ
+            <span
+              data-anim
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: '40%',
+                background:
+                  'linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)',
+                animation: 'tkjShimmer 3.2s ease-in-out 1s infinite',
+              }}
+            />
+          </span>
         </h1>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        {/* CTA */}
+        <div
+          data-anim
+          style={{
+            position: 'relative',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 16,
+            marginTop: 40,
+            animation: 'tkjRise 0.6s ease-out 0.32s both',
+          }}
+        >
           <Link
             href="/login"
-            className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-3 text-base font-semibold text-white shadow-lg transition hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-500/25"
+            className="tkj-cta"
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              padding: '15px 36px',
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 15,
+              fontWeight: 800,
+              letterSpacing: 2,
+              color: '#04070c',
+              textDecoration: 'none',
+              background: 'linear-gradient(135deg, #5c84ff, #a855f7)',
+              clipPath:
+                'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
+              boxShadow: '0 0 28px rgba(92,132,255,0.35)',
+              overflow: 'hidden',
+            }}
           >
-            Masuk ke Dasbor →
+            MASUK KE DASHBROAD
+            <span
+              data-anim
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: '36%',
+                background:
+                  'linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent)',
+                animation: 'tkjShimmer 2.8s ease-in-out infinite',
+              }}
+            />
           </Link>
           <Link
             href="/register"
-            className="rounded-xl border border-neutral-700 px-8 py-3 text-base text-neutral-300 transition hover:border-neutral-600 hover:text-white"
+            className="tkj-cta2"
+            style={{
+              display: 'inline-block',
+              padding: '14px 32px',
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 15,
+              fontWeight: 700,
+              letterSpacing: 2,
+              color: '#5c84ff',
+              textDecoration: 'none',
+              background: 'rgba(92,132,255,0.04)',
+              border: '1px solid rgba(92,132,255,0.45)',
+              clipPath:
+                'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
+            }}
           >
-            Buat Akun Gratis
+            BUAT AKUN
           </Link>
         </div>
+
+        {/* corner brackets */}
+        <div data-anim style={{ position: 'absolute', left: 18, top: 18, width: 34, height: 34, borderLeft: '2px solid rgba(92,132,255,0.4)', borderTop: '2px solid rgba(92,132,255,0.4)', animation: 'tkjBlink 4s ease-in-out infinite' }} />
+        <div data-anim style={{ position: 'absolute', right: 18, top: 18, width: 34, height: 34, borderRight: '2px solid rgba(92,132,255,0.4)', borderTop: '2px solid rgba(92,132,255,0.4)', animation: 'tkjBlink 4s ease-in-out 0.5s infinite' }} />
+        <div data-anim style={{ position: 'absolute', left: 18, bottom: 18, width: 34, height: 34, borderLeft: '2px solid rgba(92,132,255,0.4)', borderBottom: '2px solid rgba(92,132,255,0.4)', animation: 'tkjBlink 4s ease-in-out 1s infinite' }} />
+        <div data-anim style={{ position: 'absolute', right: 18, bottom: 18, width: 34, height: 34, borderRight: '2px solid rgba(92,132,255,0.4)', borderBottom: '2px solid rgba(92,132,255,0.4)', animation: 'tkjBlink 4s ease-in-out 1.5s infinite' }} />
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-neutral-800 py-10">
-        <div className="mx-auto grid max-w-5xl grid-cols-3 divide-x divide-neutral-800 px-6">
-          {[
-            { value: '2 Role', label: 'Admin & Siswa' },
-            { value: 'Real-time', label: 'Stok Tersedia' },
-            { value: '100%', label: 'Open Source' },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col items-center py-4">
-              <p className="gradient-text text-2xl font-bold md:text-3xl">{s.value}</p>
-              <p className="mt-1 text-sm text-neutral-500">{s.label}</p>
+      {/* ===== STATS ===== */}
+      <section
+        style={{
+          borderTop: '1px solid rgba(92,132,255,0.15)',
+          borderBottom: '1px solid rgba(92,132,255,0.15)',
+          background: 'linear-gradient(180deg, rgba(92,132,255,0.03), transparent)',
+          padding: '34px 20px',
+        }}
+      >
+        <div
+          style={{
+            margin: '0 auto',
+            maxWidth: 960,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 12,
+          }}
+        >
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                padding: '14px 8px',
+                background: 'rgba(232,242,247,0.025)',
+                clipPath:
+                  'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)',
+                borderTop: `2px solid rgba(${s.rgb},0.55)`,
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontSize: 'clamp(18px, 3.4vw, 30px)',
+                  fontWeight: 800,
+                  color: s.hex,
+                  textShadow: `0 0 16px rgba(${s.rgb},0.4)`,
+                }}
+              >
+                {s.value}
+              </p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: 1.5, color: '#7d93a0' }}>
+                {s.label}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-5xl px-6 py-20">
-        <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold text-white md:text-4xl">
-            Semua yang kamu butuhkan
+      {/* ===== ATURAN PEMINJAMAN ALAT ===== */}
+      <section style={{ margin: '0 auto', maxWidth: 1040, padding: '76px 20px 84px' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 46,
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 2, background: 'linear-gradient(90deg, transparent, #5c84ff)' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 4, color: '#5c84ff' }}>
+              PROTOKOL PEMINJAMAN
+            </span>
+            <div style={{ width: 40, height: 2, background: 'linear-gradient(90deg, #5c84ff, transparent)' }} />
+          </div>
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: "'Orbitron', sans-serif",
+              fontSize: 'clamp(24px, 4.6vw, 38px)',
+              fontWeight: 800,
+              letterSpacing: 1,
+              color: '#f0f8fc',
+              textTransform: 'uppercase',
+            }}
+          >
+            Aturan Peminjaman Alat
           </h2>
-          <p className="mt-3 text-neutral-400">Fitur lengkap untuk pengelolaan inventaris TKJ</p>
+          <p style={{ margin: 0, fontSize: 17, fontWeight: 500, color: '#9fb6c2' }}>
+            Ikuti protokol berikut sebelum meminjam peralatan lab TKJ
+          </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              icon: Wrench,
-              title: 'Manajemen Alat',
-              desc: 'Tambah, edit, dan pantau stok peralatan laboratorium. Dilengkapi tracking EOS/EOL untuk setiap alat.',
-              color: 'text-blue-400',
-              bg: 'bg-blue-500/10',
-            },
-            {
-              icon: PackageCheck,
-              title: 'Sistem Peminjaman',
-              desc: 'Siswa mengajukan peminjaman, admin memverifikasi. Notifikasi status real-time dan riwayat lengkap.',
-              color: 'text-purple-400',
-              bg: 'bg-purple-500/10',
-            },
-            {
-              icon: FileBarChart2,
-              title: 'Laporan & Statistik',
-              desc: 'Dashboard dengan chart aktivitas, statistik stok rendah, dan laporan peminjaman yang bisa difilter.',
-              color: 'text-green-400',
-              bg: 'bg-green-500/10',
-            },
-            {
-              icon: Shield,
-              title: 'Role-based Access',
-              desc: 'Hak akses terpisah untuk admin dan siswa. Admin kelola semua, siswa hanya lihat & ajukan peminjaman.',
-              color: 'text-yellow-400',
-              bg: 'bg-yellow-500/10',
-            },
-            {
-              icon: Zap,
-              title: 'Cepat & Responsif',
-              desc: 'Dibangun dengan Next.js 16 dan React Server Components untuk performa optimal di semua perangkat.',
-              color: 'text-orange-400',
-              bg: 'bg-orange-500/10',
-            },
-            {
-              icon: Users,
-              title: 'Manajemen User',
-              desc: 'Kelola akun siswa. Reset password, kelompok, dan kelas.',
-              color: 'text-pink-400',
-              bg: 'bg-pink-500/10',
-            },
-          ].map((f) => {
-            const Icon = f.icon
-            return (
-              <div key={f.title} className="glass-card p-5 transition hover:border-neutral-700">
-                <div className={`mb-4 inline-flex rounded-xl p-3 ${f.bg}`}>
-                  <Icon className={`h-5 w-5 ${f.color}`} />
-                </div>
-                <h3 className="mb-2 font-semibold text-white">{f.title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{f.desc}</p>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {rules.map((r) => (
+            <div
+              key={r.n}
+              className="tkj-card"
+              style={
+                {
+                  position: 'relative',
+                  padding: '24px 22px',
+                  background: 'linear-gradient(160deg, rgba(232,242,247,0.04), rgba(232,242,247,0.01))',
+                  border: `1px solid rgba(${r.rgb},0.16)`,
+                  clipPath:
+                    'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
+                  ['--hc' as string]: `rgba(${r.rgb},0.6)`,
+                } as React.CSSProperties
+              }
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 46,
+                  height: 46,
+                  marginBottom: 16,
+                  background: `rgba(${r.rgb},0.12)`,
+                  clipPath: 'polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%)',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: 17,
+                    fontWeight: 900,
+                    color: r.hex,
+                    textShadow: `0 0 12px rgba(${r.rgb},0.5)`,
+                  }}
+                >
+                  {r.n}
+                </span>
               </div>
-            )
-          })}
+              <h3
+                style={{
+                  margin: '0 0 8px',
+                  fontFamily: "'Orbitron', sans-serif",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  color: '#f0f8fc',
+                }}
+              >
+                {r.title}
+              </h3>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 500, lineHeight: 1.6, color: '#9fb6c2' }}>
+                {r.desc}
+              </p>
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  width: 28,
+                  height: 28,
+                  background: `linear-gradient(225deg, rgba(${r.rgb},0.4), transparent 60%)`,
+                }}
+              />
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-800 py-6 text-center text-sm text-neutral-600">
-        <p>Iventaris TKJ — Sistem Inventaris Sekolah Kejuruan</p>
+      {/* ===== FOOTER ===== */}
+      <footer style={{ borderTop: '1px solid rgba(92,132,255,0.15)', padding: '26px 20px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 14,
+              height: 14,
+              background: 'rgba(92,132,255,0.5)',
+              clipPath: 'polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%)',
+            }}
+          />
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, letterSpacing: 1.5, color: '#5d717d' }}>
+            TKJ
+          </p>
+        </div>
       </footer>
     </div>
   )
