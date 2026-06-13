@@ -127,7 +127,7 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
               <img
                 src={alat.foto}
                 alt={alat.nama}
-                className="h-56 w-full rounded-lg border border-neutral-800 object-cover"
+                className="max-h-80 w-full rounded-lg border border-neutral-800 bg-white/[0.02] object-contain"
               />
             ) : (
               <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-800 bg-white/[0.02]">

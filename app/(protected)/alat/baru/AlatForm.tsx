@@ -115,7 +115,7 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
                   src={foto.trim()}
                   alt="Pratinjau foto alat"
                   onError={() => setFotoError(true)}
-                  className="h-40 w-full rounded-lg border border-neutral-800 object-cover"
+                  className="max-h-72 w-full rounded-lg border border-neutral-800 bg-white/[0.02] object-contain"
                 />
               )}
             </div>
