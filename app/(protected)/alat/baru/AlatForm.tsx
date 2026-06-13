@@ -8,6 +8,8 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [foto, setFoto] = useState((initial?.foto as string) ?? '')
+  const [fotoError, setFotoError] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -22,6 +24,7 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
       stok: parseInt(formData.get('stok') as string) || 0,
       lokasi: formData.get('lokasi'),
       deskripsi: formData.get('deskripsi') || null,
+      foto: foto.trim() || null,
       tanggalEos: formData.get('tanggalEos') || null,
       tanggalEol: formData.get('tanggalEol') || null,
       keteranganEos: formData.get('keteranganEos') || null,
@@ -82,6 +85,41 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
         <div>
           <label className="mb-1.5 block text-sm text-neutral-300">Deskripsi</label>
           <textarea name="deskripsi" rows={3} defaultValue={initial?.deskripsi as string} placeholder="Keterangan alat..." className={inputClass} />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm text-neutral-300">Foto Alat (URL)</label>
+          <input
+            name="foto"
+            type="url"
+            value={foto}
+            onChange={(e) => {
+              setFoto(e.target.value)
+              setFotoError(false)
+            }}
+            placeholder="https://contoh.com/foto-alat.jpg"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-neutral-500">
+            Tempel link gambar (jpg/png). Gambar akan tampil di halaman detail alat.
+          </p>
+          {foto.trim() && (
+            <div className="mt-3">
+              {fotoError ? (
+                <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+                  Gambar gagal dimuat. Periksa kembali URL-nya.
+                </p>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={foto.trim()}
+                  alt="Pratinjau foto alat"
+                  onError={() => setFotoError(true)}
+                  className="h-40 w-full rounded-lg border border-neutral-800 object-cover"
+                />
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-t border-neutral-800 pt-4">

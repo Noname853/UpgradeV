@@ -5,7 +5,7 @@ import { GlassCard } from '@/components/shared/GlassCard'
 import { StockBadge } from '@/components/shared/StockBadge'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
-import { Package, MapPin, Calendar, ArrowLeft, Pencil } from 'lucide-react'
+import { MapPin, Calendar, ArrowLeft, Pencil, ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { DeleteAlatButton } from './DeleteAlatButton'
 
@@ -122,9 +122,19 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
 
         <div className="space-y-4">
           <GlassCard className="p-5">
-            <div className="flex h-24 items-center justify-center rounded-lg bg-white/[0.02]">
-              <Package className="h-12 w-12 text-neutral-700" />
-            </div>
+            {alat.foto ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={alat.foto}
+                alt={alat.nama}
+                className="h-56 w-full rounded-lg border border-neutral-800 object-cover"
+              />
+            ) : (
+              <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-800 bg-white/[0.02]">
+                <ImageIcon className="h-12 w-12 text-neutral-700" />
+                <span className="text-xs text-neutral-600">Belum ada foto</span>
+              </div>
+            )}
             <div className="mt-4 text-center">
               <p className="text-2xl font-bold text-white">{stokTersedia}</p>
               <p className="text-xs text-neutral-500">unit tersedia</p>
