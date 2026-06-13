@@ -7,7 +7,10 @@ const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  // img-src allows any HTTPS host so admins can use external image URLs
+  // (Imgur, ImgBB, etc.) for tool photos. Images can't execute scripts,
+  // so this does not weaken XSS protection.
+  "img-src 'self' data: blob: https:",
   "font-src 'self'",
   "connect-src 'self'",
   "frame-ancestors 'none'",
