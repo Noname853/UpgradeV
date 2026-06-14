@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { FileBarChart2 } from 'lucide-react'
@@ -45,22 +44,29 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
     dibatalkan: peminjamans.filter((p) => p.status === 'dibatalkan').length,
   }
 
+  const statCards = [
+    { label: 'Total', value: stats.total, color: '#5c84ff' },
+    { label: 'Dipinjam', value: stats.dipinjam, color: '#3b82f6' },
+    { label: 'Dikembalikan', value: stats.dikembalikan, color: '#22c55e' },
+    { label: 'Dibatalkan', value: stats.dibatalkan, color: '#ef4444' },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Laporan Peminjaman</h1>
-          <p className="text-sm text-neutral-400">Data peminjaman keseluruhan</p>
-        </div>
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-6 hud-rise">
+        <h1 className="hud-title" style={{ fontSize: 26 }}>Laporan Peminjaman</h1>
+        <p className="mt-1.5 text-[15px]" style={{ color: '#8a97a3' }}>
+          Data peminjaman keseluruhan
+        </p>
       </div>
 
       {/* Filters */}
-      <GlassCard className="p-4">
+      <div className="hud-panel mb-[18px] p-[18px] hud-rise">
         <form className="flex flex-col gap-3">
           <select
             name="status"
             defaultValue={status}
-            className="w-full appearance-none rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-center text-sm text-neutral-300 outline-none focus:border-blue-500"
+            className="hud-input hud-clip-sm w-full appearance-none px-3 py-2 text-sm"
           >
             <option value="">Semua Status</option>
             <option value="menunggu_verifikasi">Menunggu</option>
@@ -70,75 +76,82 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
           </select>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-center text-xs font-medium text-neutral-400">Dari Tanggal</label>
+              <label className="hud-label mb-1.5 block text-[11px]" style={{ color: '#8a97a3' }}>Dari Tanggal</label>
               <input
                 name="dari"
                 type="date"
                 defaultValue={sp.dari}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-blue-500"
+                className="hud-input hud-clip-sm w-full px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-center text-xs font-medium text-neutral-400">Sampai Tanggal</label>
+              <label className="hud-label mb-1.5 block text-[11px]" style={{ color: '#8a97a3' }}>Sampai Tanggal</label>
               <input
                 name="sampai"
                 type="date"
                 defaultValue={sp.sampai}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-blue-500"
+                className="hud-input hud-clip-sm w-full px-3 py-2 text-sm"
               />
             </div>
           </div>
-          <button
-            type="submit"
-            className="w-full rounded-lg border border-neutral-700 py-2 text-sm text-neutral-300 hover:text-white"
-          >
-            Filter
+          <button type="submit" className="hud-btn-ghost hud-clip-sm w-full py-2.5 text-[12px]">
+            FILTER
           </button>
         </form>
-      </GlassCard>
+      </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { label: 'Total', value: stats.total, color: 'text-white' },
-          { label: 'Dipinjam', value: stats.dipinjam, color: 'text-blue-400' },
-          { label: 'Dikembalikan', value: stats.dikembalikan, color: 'text-green-400' },
-          { label: 'Dibatalkan', value: stats.dibatalkan, color: 'text-red-400' },
-        ].map((s) => (
-          <GlassCard key={s.label} className="p-4 text-center">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-neutral-500">{s.label}</p>
-          </GlassCard>
+      <div
+        className="mb-[18px] grid gap-[13px]"
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}
+      >
+        {statCards.map((s) => (
+          <div
+            key={s.label}
+            className="hud-panel hud-accent-top hud-rise p-[18px] text-center"
+            style={{
+              background: `linear-gradient(160deg, ${s.color}12, rgba(255,255,255,0.012))`,
+              border: `1px solid ${s.color}38`,
+              ['--hud-blue2' as string]: s.color,
+            }}
+          >
+            <p className="hud-title text-[30px]" style={{ color: s.color }}>{s.value}</p>
+            <p className="mt-1 text-[12px]" style={{ color: '#6b7785' }}>{s.label}</p>
+            <span
+              className="hud-diamond absolute"
+              style={{ right: 14, top: 14, width: 10, height: 10, background: s.color, boxShadow: `0 0 12px ${s.color}99` }}
+            />
+          </div>
         ))}
       </div>
 
       {/* Table */}
-      <GlassCard className="overflow-hidden">
+      <div className="hud-panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-max text-sm">
             <thead>
-              <tr className="border-b border-neutral-800 text-left">
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">ID</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Peminjam</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Alat</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Tanggal Pinjam</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Tanggal Kembali</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Status</th>
+              <tr style={{ borderBottom: '1px solid rgba(99,102,241,0.16)' }} className="text-left">
+                <th className="hud-label whitespace-nowrap px-4 py-3 text-[10px]" style={{ color: '#6b7785' }}>ID</th>
+                <th className="hud-label whitespace-nowrap px-4 py-3 text-[10px]" style={{ color: '#6b7785' }}>Peminjam</th>
+                <th className="hud-label whitespace-nowrap px-4 py-3 text-[10px]" style={{ color: '#6b7785' }}>Alat</th>
+                <th className="hud-label whitespace-nowrap px-4 py-3 text-[10px]" style={{ color: '#6b7785' }}>Tanggal Pinjam</th>
+                <th className="hud-label whitespace-nowrap px-4 py-3 text-[10px]" style={{ color: '#6b7785' }}>Tanggal Kembali</th>
+                <th className="hud-label whitespace-nowrap px-4 py-3 text-[10px]" style={{ color: '#6b7785' }}>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800">
+            <tbody>
               {peminjamans.map((p) => (
-                <tr key={p.id} className="transition hover:bg-white/[0.02]">
-                  <td className="whitespace-nowrap px-4 py-3 text-neutral-400">#{p.id}</td>
+                <tr key={p.id} className="transition hover:bg-white/[0.02]" style={{ borderBottom: '1px solid rgba(99,102,241,0.08)' }}>
+                  <td className="whitespace-nowrap px-4 py-3" style={{ color: '#8a97a3' }}>#{p.id}</td>
                   <td className="whitespace-nowrap px-4 py-3">
-                    <p className="text-white">{p.user.name}</p>
-                    <p className="text-xs text-neutral-500">{p.user.kelas ?? '-'}</p>
+                    <p style={{ color: '#e8edf2' }}>{p.user.name}</p>
+                    <p className="text-xs" style={{ color: '#6b7785' }}>{p.user.kelas ?? '-'}</p>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-neutral-300">
+                  <td className="whitespace-nowrap px-4 py-3" style={{ color: '#c3ccd6' }}>
                     {p.details.map((d) => d.alat.nama).join(', ')}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-neutral-400">{formatDate(p.tanggalPinjam)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-neutral-400">{formatDate(p.tanggalKembali)}</td>
+                  <td className="whitespace-nowrap px-4 py-3" style={{ color: '#8a97a3' }}>{formatDate(p.tanggalPinjam)}</td>
+                  <td className="whitespace-nowrap px-4 py-3" style={{ color: '#8a97a3' }}>{formatDate(p.tanggalKembali)}</td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <StatusBadge status={p.status} />
                   </td>
@@ -148,12 +161,12 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
           </table>
         </div>
         {peminjamans.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-neutral-600">
+          <div className="flex flex-col items-center justify-center py-12" style={{ color: '#6b7785' }}>
             <FileBarChart2 className="mb-2 h-10 w-10" />
             <p>Tidak ada data laporan</p>
           </div>
         )}
-      </GlassCard>
+      </div>
     </div>
   )
 }

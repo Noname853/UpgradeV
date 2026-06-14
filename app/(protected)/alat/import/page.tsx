@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { ArrowLeft, Upload, FileSpreadsheet, Download, CheckCircle2, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import ExcelJS from 'exceljs'
@@ -166,144 +165,148 @@ export default async function ImportAlatPage({
               : null
 
   return (
-    <div className="space-y-6 pb-8">
-      <div className="flex items-center gap-3">
-        <Link href="/alat" className="rounded-lg border border-neutral-800 p-2 text-neutral-400 hover:text-white">
+    <div className="mx-auto max-w-[1120px] pb-8">
+      <div className="mb-5 flex items-center gap-3 hud-rise">
+        <Link
+          href="/alat"
+          className="hud-clip-sm flex h-[38px] w-[38px] items-center justify-center"
+          style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Import Alat dari Excel</h1>
-          <p className="text-sm text-neutral-400">Upload file .xlsx untuk menambah/memperbarui data alat secara massal</p>
+          <h1 className="hud-title" style={{ fontSize: 22 }}>Import Alat dari Excel</h1>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Upload file .xlsx untuk menambah / memperbarui data alat secara massal</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <GlassCard className="p-6 lg:col-span-2">
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        <div className="hud-panel hud-accent-top hud-rise p-6" style={{ gridColumn: 'span 2 / span 2' }}>
           <form action={importAction} className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-300">Pilih file Excel</label>
+              <label className="mb-2.5 block text-sm font-semibold" style={{ color: '#b3bdc7' }}>Pilih file Excel</label>
               <input
                 name="file"
                 type="file"
                 accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 required
-                className="block w-full cursor-pointer rounded-lg border border-neutral-700 bg-white/[0.03] text-sm text-neutral-300 file:mr-4 file:cursor-pointer file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:from-blue-500 hover:file:to-purple-500"
+                className="hud-input block w-full cursor-pointer text-sm file:mr-4 file:cursor-pointer file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:brightness-110"
               />
-              <p className="mt-2 text-xs text-neutral-500">
+              <p className="mt-2 text-xs" style={{ color: '#6b7785' }}>
                 Maksimal 1MB. Hanya format .xlsx yang didukung.
               </p>
             </div>
 
             {errorMsg && (
-              <p className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+              <p
+                className="hud-clip-sm flex items-center gap-2 px-3 py-2 text-sm"
+                style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
+              >
                 <AlertTriangle className="h-4 w-4" />
                 {errorMsg}
               </p>
             )}
 
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500"
-              >
+            <div className="flex flex-wrap gap-3">
+              <button type="submit" className="hud-btn-primary flex items-center gap-2 px-[18px] py-3 text-[12px]">
                 <Upload className="h-4 w-4" />
                 Upload & Import
               </button>
               <Link
                 href="/api/alat/template"
                 prefetch={false}
-                className="flex items-center gap-2 rounded-lg border border-neutral-700 px-5 py-2.5 text-sm text-neutral-300 transition hover:border-neutral-600 hover:text-white"
+                className="hud-btn-ghost flex items-center gap-2 px-[18px] py-3 text-[12px]"
               >
                 <Download className="h-4 w-4" />
                 Download Template
               </Link>
             </div>
           </form>
-        </GlassCard>
+        </div>
 
-        <GlassCard className="p-6">
+        <div className="hud-panel hud-rise p-[22px]">
           <div className="mb-3 flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4 text-blue-400" />
-            <h2 className="text-sm font-semibold text-white">Format Excel</h2>
+            <FileSpreadsheet className="h-4 w-4" style={{ color: '#5c84ff' }} />
+            <h2 className="hud-label text-[11px]" style={{ color: '#c3ccd6' }}>Format Excel</h2>
           </div>
-          <p className="mb-3 text-xs text-neutral-400">
+          <p className="mb-3.5 text-[12.5px] leading-relaxed" style={{ color: '#8a97a3' }}>
             Baris pertama harus berupa header dengan nama kolom berikut:
           </p>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-red-500/10 px-2 py-0.5 font-mono text-red-400">kode</span>
-              <span className="text-neutral-500">wajib, unik</span>
+          <div className="flex flex-col gap-[9px] text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kode</span>
+              <span style={{ color: '#6b7785' }}>wajib, unik</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-red-500/10 px-2 py-0.5 font-mono text-red-400">nama</span>
-              <span className="text-neutral-500">wajib</span>
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>nama</span>
+              <span style={{ color: '#6b7785' }}>wajib</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-red-500/10 px-2 py-0.5 font-mono text-red-400">kategori</span>
-              <span className="text-neutral-500">wajib</span>
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kategori</span>
+              <span style={{ color: '#6b7785' }}>wajib</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-neutral-700/50 px-2 py-0.5 font-mono text-neutral-400">stok</span>
-              <span className="text-neutral-500">angka, default 0</span>
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>stok</span>
+              <span style={{ color: '#6b7785' }}>angka, default 0</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-neutral-700/50 px-2 py-0.5 font-mono text-neutral-400">lokasi</span>
-              <span className="text-neutral-500">opsional</span>
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>lokasi</span>
+              <span style={{ color: '#6b7785' }}>opsional</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-neutral-700/50 px-2 py-0.5 font-mono text-neutral-400">deskripsi</span>
-              <span className="text-neutral-500">opsional</span>
+            <div className="flex items-center gap-2.5">
+              <span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>deskripsi</span>
+              <span style={{ color: '#6b7785' }}>opsional</span>
             </div>
           </div>
-          <p className="mt-4 text-xs text-neutral-500">
-            Jika <code className="rounded bg-neutral-800 px-1">kode</code> sudah ada, data akan diperbarui.
+          <p className="mt-4 text-xs" style={{ color: '#6b7785' }}>
+            Jika <code className="px-1" style={{ background: 'rgba(99,102,241,0.12)' }}>kode</code> sudah ada, data akan diperbarui.
           </p>
-        </GlassCard>
+        </div>
       </div>
 
       {hasResult && (
-        <GlassCard className="p-6">
+        <div className="hud-panel hud-rise mt-4 p-6">
           <div className="mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-400" />
-            <h2 className="text-sm font-semibold text-white">Hasil Import</h2>
+            <CheckCircle2 className="h-5 w-5" style={{ color: '#22c55e' }} />
+            <h2 className="hud-label text-[12px]" style={{ color: '#c3ccd6' }}>Hasil Import</h2>
           </div>
           <div className="mb-4 grid grid-cols-3 gap-3">
-            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3 text-center">
-              <p className="text-2xl font-bold text-green-400">{created}</p>
-              <p className="text-xs text-neutral-500">Ditambahkan</p>
+            <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.05)' }}>
+              <p className="hud-title text-[24px]" style={{ color: '#22c55e' }}>{created}</p>
+              <p className="text-xs" style={{ color: '#6b7785' }}>Ditambahkan</p>
             </div>
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-center">
-              <p className="text-2xl font-bold text-blue-400">{updated}</p>
-              <p className="text-xs text-neutral-500">Diperbarui</p>
+            <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)' }}>
+              <p className="hud-title text-[24px]" style={{ color: '#3b82f6' }}>{updated}</p>
+              <p className="text-xs" style={{ color: '#6b7785' }}>Diperbarui</p>
             </div>
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-center">
-              <p className="text-2xl font-bold text-red-400">{errorsCount}</p>
-              <p className="text-xs text-neutral-500">Gagal</p>
+            <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)' }}>
+              <p className="hud-title text-[24px]" style={{ color: '#ef4444' }}>{errorsCount}</p>
+              <p className="text-xs" style={{ color: '#6b7785' }}>Gagal</p>
             </div>
           </div>
 
           {log.length > 0 && (
-            <div className="max-h-80 overflow-y-auto rounded-lg border border-neutral-800">
+            <div className="hud-clip-sm max-h-80 overflow-y-auto" style={{ border: '1px solid rgba(99,102,241,0.16)' }}>
               <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-neutral-900">
+                <thead className="sticky top-0" style={{ background: '#0e0f14' }}>
                   <tr className="text-left">
-                    <th className="px-3 py-2 text-neutral-500">Baris</th>
-                    <th className="px-3 py-2 text-neutral-500">Kode</th>
-                    <th className="px-3 py-2 text-neutral-500">Status</th>
-                    <th className="px-3 py-2 text-neutral-500">Keterangan</th>
+                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Baris</th>
+                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Kode</th>
+                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Status</th>
+                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Keterangan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800">
+                <tbody>
                   {log.map((r, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2 text-neutral-400">{r.row}</td>
-                      <td className="px-3 py-2 font-mono text-neutral-300">{r.kode}</td>
+                    <tr key={i} style={{ borderTop: '1px solid rgba(99,102,241,0.12)' }}>
+                      <td className="px-3 py-2" style={{ color: '#8a97a3' }}>{r.row}</td>
+                      <td className="px-3 py-2 font-mono" style={{ color: '#c3ccd6' }}>{r.kode}</td>
                       <td className="px-3 py-2">
-                        {r.action === 'created' && <span className="text-green-400">Ditambahkan</span>}
-                        {r.action === 'updated' && <span className="text-blue-400">Diperbarui</span>}
-                        {r.action === 'error' && <span className="text-red-400">Gagal</span>}
+                        {r.action === 'created' && <span style={{ color: '#22c55e' }}>Ditambahkan</span>}
+                        {r.action === 'updated' && <span style={{ color: '#3b82f6' }}>Diperbarui</span>}
+                        {r.action === 'error' && <span style={{ color: '#ef4444' }}>Gagal</span>}
                       </td>
-                      <td className="px-3 py-2 text-neutral-500">{r.message ?? '-'}</td>
+                      <td className="px-3 py-2" style={{ color: '#6b7785' }}>{r.message ?? '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -311,21 +314,15 @@ export default async function ImportAlatPage({
             </div>
           )}
 
-          <div className="mt-4 flex gap-3">
-            <Link
-              href="/alat"
-              className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500"
-            >
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/alat" className="hud-btn-primary px-[18px] py-3 text-[12px]">
               Lihat Daftar Alat
             </Link>
-            <Link
-              href="/alat/import"
-              className="rounded-lg border border-neutral-700 px-5 py-2.5 text-sm text-neutral-300 transition hover:border-neutral-600 hover:text-white"
-            >
+            <Link href="/alat/import" className="hud-btn-ghost px-[18px] py-3 text-[12px]">
               Import Lagi
             </Link>
           </div>
-        </GlassCard>
+        </div>
       )}
     </div>
   )

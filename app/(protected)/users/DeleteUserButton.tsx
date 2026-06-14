@@ -51,18 +51,19 @@ export function DeleteUserButton({ id, isActive }: Props) {
     }
   }
 
-  if (loading) return <span className="text-xs text-neutral-600">...</span>
+  if (loading) return <span className="text-[12.5px]" style={{ color: '#6b7785' }}>...</span>
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <button
         onClick={handleToggle}
-        className={`text-xs ${isActive ? 'text-yellow-500 hover:text-yellow-400' : 'text-green-500 hover:text-green-400'}`}
+        className="text-[12.5px] transition"
+        style={{ color: isActive ? '#eab308' : '#22c55e' }}
       >
         {isActive ? 'Nonaktifkan' : 'Aktifkan'}
       </button>
       {!isActive && (
-        <button onClick={handleDelete} className="text-xs text-red-500 hover:text-red-400">
+        <button onClick={handleDelete} className="text-[12.5px] transition" style={{ color: '#ef4444' }}>
           Hapus
         </button>
       )}

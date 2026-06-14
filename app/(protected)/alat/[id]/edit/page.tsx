@@ -17,14 +17,18 @@ export default async function EditAlatPage({ params }: { params: Promise<{ id: s
   if (!alat) notFound()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href={`/alat/${id}`} className="rounded-lg border border-neutral-800 p-2 text-neutral-400 hover:text-white">
+    <div className="mx-auto max-w-[1120px] space-y-6">
+      <div className="flex items-center gap-3 hud-rise">
+        <Link
+          href={`/alat/${id}`}
+          className="hud-clip-sm flex h-[38px] w-[38px] items-center justify-center"
+          style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Edit Alat</h1>
-          <p className="text-sm text-neutral-400">{alat.nama}</p>
+          <h1 className="hud-title" style={{ fontSize: 22 }}>Edit Alat</h1>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>{alat.nama}</p>
         </div>
       </div>
       <AlatForm

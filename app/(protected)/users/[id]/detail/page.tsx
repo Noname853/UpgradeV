@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { ArrowLeft, Users } from 'lucide-react'
 import Link from 'next/link'
 
@@ -28,65 +27,76 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/users" className="rounded-lg border border-neutral-800 p-2 text-neutral-400 hover:text-white">
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-5 flex items-center gap-3 hud-rise">
+        <Link
+          href="/users"
+          className="hud-clip-sm flex h-[38px] w-[38px] items-center justify-center"
+          style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Detail User</h1>
-          <p className="text-sm text-neutral-400">{user.name}</p>
+          <h1 className="hud-title" style={{ fontSize: 22 }}>Detail User</h1>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>{user.name}</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <GlassCard className="p-5">
-          <h2 className="mb-4 text-sm font-semibold text-neutral-300">Informasi Akun</h2>
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-neutral-500">Nama</span>
-              <span className="text-white">{user.name}</span>
+      <div className="grid items-start gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        <div className="hud-panel hud-accent-top hud-rise p-[22px]">
+          <h2 className="hud-label mb-4 text-[11px]" style={{ color: '#c3ccd6' }}>Informasi Akun</h2>
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between text-[13.5px]">
+              <span style={{ color: '#6b7785' }}>Nama</span>
+              <span style={{ color: '#e8edf2' }}>{user.name}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-neutral-500">Email</span>
-              <span className="text-white">{user.email}</span>
+            <div className="flex justify-between text-[13.5px]">
+              <span style={{ color: '#6b7785' }}>Email</span>
+              <span style={{ color: '#e8edf2' }}>{user.email}</span>
             </div>
             {user.kelas && (
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-500">Kelas</span>
-                <span className="text-white">{user.kelas}</span>
+              <div className="flex justify-between text-[13.5px]">
+                <span style={{ color: '#6b7785' }}>Kelas</span>
+                <span style={{ color: '#e8edf2' }}>{user.kelas}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="text-neutral-500">Role</span>
-              <span className="text-white capitalize">{user.role}</span>
+            <div className="flex justify-between text-[13.5px]">
+              <span style={{ color: '#6b7785' }}>Role</span>
+              <span className="capitalize" style={{ color: '#e8edf2' }}>{user.role}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-neutral-500">Status</span>
-              <span className={user.isActive ? 'text-green-400' : 'text-neutral-500'}>
+            <div className="flex justify-between text-[13.5px]">
+              <span style={{ color: '#6b7785' }}>Status</span>
+              <span style={{ color: user.isActive ? '#22c55e' : '#6b7785' }}>
                 {user.isActive ? 'Aktif' : 'Nonaktif'}
               </span>
             </div>
           </div>
-        </GlassCard>
+        </div>
 
-        <GlassCard className="p-5">
+        <div className="hud-panel hud-accent-top hud-rise p-[22px]">
           <div className="mb-4 flex items-center gap-2">
-            <Users className="h-4 w-4 text-blue-400" />
-            <h2 className="text-sm font-semibold text-neutral-300">Kelompok</h2>
+            <Users className="h-4 w-4" style={{ color: '#5c84ff' }} />
+            <h2 className="hud-label text-[11px]" style={{ color: '#c3ccd6' }}>Kelompok</h2>
           </div>
 
           {user.kelompok ? (
-            <p className="mb-3 text-sm font-medium text-white">{user.kelompok}</p>
+            <p className="mb-3 text-[14px] font-semibold" style={{ color: '#e8edf2' }}>{user.kelompok}</p>
           ) : (
-            <p className="mb-3 text-sm text-neutral-600 italic">Belum ada nama kelompok</p>
+            <p className="mb-3 text-[14px] italic" style={{ color: '#6b7785' }}>Belum ada nama kelompok</p>
           )}
 
           {anggota.length > 0 ? (
-            <ul className="space-y-1.5">
+            <ul className="flex flex-col gap-2">
               {anggota.map((nama, i) => (
-                <li key={i} className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-white/[0.02] px-3 py-2 text-sm text-white">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/20 text-xs text-blue-400">
+                <li
+                  key={i}
+                  className="hud-clip-sm flex items-center gap-2.5 px-3 py-2 text-[13.5px]"
+                  style={{ color: '#e8edf2', border: '1px solid rgba(99,102,241,0.14)', background: 'rgba(255,255,255,0.02)' }}
+                >
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-[11px]"
+                    style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.18)' }}
+                  >
                     {i + 1}
                   </span>
                   {nama}
@@ -94,9 +104,9 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-neutral-600 italic">Belum ada anggota</p>
+            <p className="text-[13.5px] italic" style={{ color: '#6b7785' }}>Belum ada anggota</p>
           )}
-        </GlassCard>
+        </div>
       </div>
     </div>
   )

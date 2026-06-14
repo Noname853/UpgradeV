@@ -25,7 +25,7 @@ export function DeleteAlatButton({ id }: { id: number }) {
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="flex items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-60"
+      className="hud-btn-danger flex items-center gap-2 px-4 py-2 text-[12px] disabled:opacity-60"
     >
       <Trash2 className="h-4 w-4" />
       {loading ? '...' : 'Hapus'}

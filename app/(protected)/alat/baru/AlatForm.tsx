@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 
 export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
   const router = useRouter()
@@ -49,46 +48,47 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
     }
   }
 
-  const inputClass =
-    'w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30'
+  const inputClass = 'hud-input w-full px-3.5 py-2.5 text-sm'
+  const labelClass = 'mb-2 block text-[13px]'
+  const labelStyle = { color: '#b3bdc7' }
 
   return (
-    <GlassCard className="max-w-2xl p-6">
+    <div className="hud-panel hud-rise max-w-2xl p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Kode Alat *</label>
+            <label className={labelClass} style={labelStyle}>Kode Alat *</label>
             <input name="kode" required defaultValue={initial?.kode as string} placeholder="JRN001" className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Kategori *</label>
+            <label className={labelClass} style={labelStyle}>Kategori *</label>
             <input name="kategori" required defaultValue={initial?.kategori as string} placeholder="Jaringan" className={inputClass} />
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-neutral-300">Nama Alat *</label>
+          <label className={labelClass} style={labelStyle}>Nama Alat *</label>
           <input name="nama" required defaultValue={initial?.nama as string} placeholder="Switch TP-Link 24 Port" className={inputClass} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Stok</label>
+            <label className={labelClass} style={labelStyle}>Stok</label>
             <input name="stok" type="number" min="0" defaultValue={initial?.stok as number ?? 0} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Lokasi</label>
+            <label className={labelClass} style={labelStyle}>Lokasi</label>
             <input name="lokasi" defaultValue={initial?.lokasi as string} placeholder="Lab Jaringan" className={inputClass} />
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-neutral-300">Deskripsi</label>
-          <textarea name="deskripsi" rows={3} defaultValue={initial?.deskripsi as string} placeholder="Keterangan alat..." className={inputClass} />
+          <label className={labelClass} style={labelStyle}>Deskripsi</label>
+          <textarea name="deskripsi" rows={3} defaultValue={initial?.deskripsi as string} placeholder="Keterangan alat..." className={inputClass} style={{ resize: 'vertical' }} />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-neutral-300">Foto Alat (URL)</label>
+          <label className={labelClass} style={labelStyle}>Foto Alat (URL)</label>
           <input
             name="foto"
             type="url"
@@ -100,13 +100,16 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
             placeholder="https://contoh.com/foto-alat.jpg"
             className={inputClass}
           />
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="mt-2 text-xs" style={{ color: '#6b7785' }}>
             Tempel link gambar (jpg/png). Gambar akan tampil di halaman detail alat.
           </p>
           {foto.trim() && (
             <div className="mt-3">
               {fotoError ? (
-                <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+                <p
+                  className="hud-clip-sm px-3 py-2 text-xs"
+                  style={{ color: '#eab308', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.28)' }}
+                >
                   Gambar gagal dimuat. Periksa kembali URL-nya.
                 </p>
               ) : (
@@ -115,41 +118,47 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
                   src={foto.trim()}
                   alt="Pratinjau foto alat"
                   onError={() => setFotoError(true)}
-                  className="max-h-72 w-full rounded-lg border border-neutral-800 bg-white/[0.02] object-contain"
+                  className="hud-clip-md max-h-72 w-full object-contain"
+                  style={{ border: '1px solid rgba(99,102,241,0.16)', background: 'rgba(255,255,255,0.02)' }}
                 />
               )}
             </div>
           )}
         </div>
 
-        <div className="border-t border-neutral-800 pt-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">EOS / EOL (Opsional)</p>
-          <div className="grid grid-cols-2 gap-4">
+        <div style={{ borderTop: '1px solid rgba(99,102,241,0.12)', paddingTop: 16 }}>
+          <p className="hud-label mb-3 text-[10px]" style={{ color: '#6b7785', letterSpacing: 2 }}>EOS / EOL (Opsional)</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm text-neutral-300">Tanggal EOS</label>
+              <label className={labelClass} style={labelStyle}>Tanggal EOS</label>
               <input name="tanggalEos" type="date" defaultValue={initial?.tanggalEos as string} className={inputClass} />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-neutral-300">Tanggal EOL</label>
+              <label className={labelClass} style={labelStyle}>Tanggal EOL</label>
               <input name="tanggalEol" type="date" defaultValue={initial?.tanggalEol as string} className={inputClass} />
             </div>
           </div>
         </div>
 
         {error && (
-          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
+          <p
+            className="hud-clip-sm px-3 py-2 text-sm"
+            style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
+          >
+            {error}
+          </p>
         )}
 
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 disabled:opacity-60"
+            className="hud-btn-primary px-7 py-3 text-[12px] disabled:opacity-60"
           >
             {loading ? 'Menyimpan...' : initial ? 'Simpan Perubahan' : 'Tambah Alat'}
           </button>
         </div>
       </form>
-    </GlassCard>
+    </div>
   )
 }

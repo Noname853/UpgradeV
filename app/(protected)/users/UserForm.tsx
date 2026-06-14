@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 
 interface UserFormProps {
   initial?: {
@@ -20,8 +19,7 @@ export function UserForm({ initial }: UserFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const inputClass =
-    'w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30'
+  const inputClass = 'hud-input w-full px-[13px] py-[11px] text-[14px]'
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -62,62 +60,70 @@ export function UserForm({ initial }: UserFormProps) {
     }
   }
 
+  const labelClass = 'mb-[7px] block text-[13px]'
+  const labelStyle = { color: '#b3bdc7' }
+
   return (
-    <GlassCard className="mb-8 w-full p-8">
+    <div className="hud-panel hud-accent-top hud-rise mb-8 w-full max-w-[720px] p-[26px]">
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-[18px] sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Nama Lengkap *</label>
+            <label className={labelClass} style={labelStyle}>Nama Lengkap *</label>
             <input name="name" required defaultValue={initial?.name} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Email *</label>
+            <label className={labelClass} style={labelStyle}>Email *</label>
             <input name="email" type="email" required defaultValue={initial?.email} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">
+            <label className={labelClass} style={labelStyle}>
               Password {initial ? '(kosongkan jika tidak diubah)' : '*'}
             </label>
             <input name="password" type="password" className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Role</label>
-            <select name="role" defaultValue={initial?.role ?? 'siswa'} className={`${inputClass} bg-neutral-900`}>
+            <label className={labelClass} style={labelStyle}>Role</label>
+            <select name="role" defaultValue={initial?.role ?? 'siswa'} className={inputClass} style={{ background: '#0e0f14' }}>
               <option value="siswa">Siswa</option>
               <option value="admin">Admin</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Kelas</label>
+            <label className={labelClass} style={labelStyle}>Kelas</label>
             <input name="kelas" defaultValue={initial?.kelas ?? ''} placeholder="XII TKJ 1" className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-neutral-300">Kelompok</label>
+            <label className={labelClass} style={labelStyle}>Kelompok</label>
             <input name="kelompok" defaultValue={initial?.kelompok ?? ''} placeholder="Kelompok A" className={inputClass} />
           </div>
         </div>
 
         {error && (
-          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
+          <p
+            className="hud-clip-sm px-3 py-2 text-[13px]"
+            style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}
+          >
+            {error}
+          </p>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex justify-end gap-[11px] pt-2">
           <button
             type="button"
             onClick={() => router.push('/users')}
-            className="rounded-lg border border-neutral-700 px-5 py-2.5 text-sm text-neutral-300 transition hover:border-neutral-600 hover:text-white"
+            className="hud-btn-ghost px-[22px] py-3 text-[12px]"
           >
             Batal
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 disabled:opacity-60"
+            className="hud-btn-primary px-6 py-3 text-[12px] disabled:opacity-60"
           >
             {loading ? 'Menyimpan...' : initial ? 'Simpan Perubahan' : 'Tambah User'}
           </button>
         </div>
       </form>
-    </GlassCard>
+    </div>
   )
 }

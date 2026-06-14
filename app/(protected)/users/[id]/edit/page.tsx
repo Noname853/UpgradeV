@@ -20,14 +20,18 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
   if (!user) notFound()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/users" className="rounded-lg border border-neutral-800 p-2 text-neutral-400 hover:text-white">
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-5 flex items-center gap-3 hud-rise">
+        <Link
+          href="/users"
+          className="hud-clip-sm flex h-[38px] w-[38px] items-center justify-center"
+          style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Edit User</h1>
-          <p className="text-sm text-neutral-400">{user.name}</p>
+          <h1 className="hud-title" style={{ fontSize: 22 }}>Edit User</h1>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>{user.name}</p>
         </div>
       </div>
       <UserForm initial={user} />
