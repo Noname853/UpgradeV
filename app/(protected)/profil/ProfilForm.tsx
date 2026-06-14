@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { GlassCard } from '@/components/shared/GlassCard'
-import { Plus, Trash2, Users } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 
 interface Props {
   kelompok: string | null
@@ -16,9 +15,6 @@ export function ProfilForm({ kelompok: initialKelompok, anggota: initialAnggota 
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-
-  const inputClass =
-    'w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30'
 
   function addAnggota() {
     const nama = newAnggota.trim()
@@ -68,37 +64,62 @@ export function ProfilForm({ kelompok: initialKelompok, anggota: initialAnggota 
   }
 
   return (
-    <GlassCard className="p-5">
-      <div className="mb-4 flex items-center gap-2">
-        <Users className="h-4 w-4 text-blue-400" />
-        <h2 className="text-sm font-semibold text-neutral-300">Kelompok Saya</h2>
-      </div>
+    <div className="hud-panel hud-accent-top hud-rise p-[22px]">
+      <h2 className="hud-label mb-3.5 text-[11px]" style={{ color: '#c3ccd6' }}>
+        Kelompok
+      </h2>
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <label className="mb-1.5 block text-sm text-neutral-300">Nama Kelompok</label>
+          <label className="hud-label mb-1.5 block text-[11px]" style={{ color: '#8a97a3' }}>
+            Nama Kelompok
+          </label>
           <input
+            name="kelompok"
             value={kelompok}
             onChange={(e) => setKelompok(e.target.value)}
             placeholder="Contoh: Kelompok 3A"
-            className={inputClass}
+            className="hud-input w-full"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-neutral-300">
-            Anggota <span className="text-neutral-500">({anggota.length} orang)</span>
+          <label className="hud-label mb-2 block text-[11px]" style={{ color: '#8a97a3' }}>
+            Anggota <span style={{ color: '#6b7785' }}>({anggota.length} orang)</span>
           </label>
 
           {anggota.length > 0 && (
-            <ul className="mb-3 space-y-1.5">
+            <ul className="mb-3 flex flex-col gap-2">
               {anggota.map((nama, idx) => (
-                <li key={idx} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-white/[0.02] px-3 py-2">
-                  <span className="text-sm text-white">{nama}</span>
+                <li
+                  key={idx}
+                  className="hud-clip-sm flex items-center justify-between gap-2.5 px-3 py-2.5"
+                  style={{
+                    border: '1px solid rgba(99,102,241,0.14)',
+                    background: 'rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="inline-flex items-center justify-center"
+                      style={{
+                        width: 20,
+                        height: 20,
+                        fontSize: 11,
+                        color: '#5c84ff',
+                        background: 'rgba(92,132,255,0.18)',
+                        borderRadius: '50%',
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="text-[13.5px]" style={{ color: '#e8edf2' }}>{nama}</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeAnggota(idx)}
-                    className="text-neutral-500 hover:text-red-400 transition"
+                    className="transition"
+                    style={{ color: '#6b7785' }}
                     aria-label="Hapus anggota"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -110,40 +131,59 @@ export function ProfilForm({ kelompok: initialKelompok, anggota: initialAnggota 
 
           <div className="flex gap-2">
             <input
+              name="newAnggota"
               value={newAnggota}
               onChange={(e) => setNewAnggota(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAnggota())}
               placeholder="Nama anggota..."
-              className={inputClass}
+              className="hud-input w-full"
             />
             <button
               type="button"
               onClick={addAnggota}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-300 hover:text-white transition"
+              className="hud-btn-ghost inline-flex shrink-0 items-center gap-1.5 px-4 text-[12px]"
             >
               <Plus className="h-4 w-4" />
-              Tambah
+              TAMBAH
             </button>
           </div>
         </div>
 
         {error && (
-          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
+          <p
+            className="hud-clip-sm px-3 py-2 text-[13px]"
+            style={{
+              color: '#ef4444',
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.25)',
+            }}
+          >
+            {error}
+          </p>
         )}
 
         {saved && (
-          <p className="rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-sm text-green-400">Tersimpan!</p>
+          <p
+            className="hud-clip-sm px-3 py-2 text-[13px]"
+            style={{
+              color: '#22c55e',
+              background: 'rgba(34,197,94,0.1)',
+              border: '1px solid rgba(34,197,94,0.25)',
+            }}
+          >
+            Tersimpan!
+          </p>
         )}
 
         <button
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 disabled:opacity-40"
+          className="hud-btn-primary w-full px-[22px] py-3 text-[12px] disabled:opacity-40"
         >
-          {saving ? 'Menyimpan...' : 'Simpan Kelompok'}
+          {saving ? 'MENYIMPAN...' : 'SIMPAN KELOMPOK'}
         </button>
       </div>
-    </GlassCard>
+    </div>
   )
 }

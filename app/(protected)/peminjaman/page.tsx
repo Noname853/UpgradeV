@@ -1,6 +1,5 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { Plus, PackageCheck } from 'lucide-react'
@@ -168,82 +167,79 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3 hud-rise">
         <div>
-          <h1 className="text-xl font-bold text-white sm:text-2xl">Peminjaman</h1>
-          <p className="text-sm text-neutral-400">{total} total peminjaman</p>
+          <h1 className="hud-title" style={{ fontSize: 24 }}>Peminjaman Saya</h1>
+          <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>{total} total peminjaman</p>
         </div>
-        {!isAdmin && (
-          <Link
-            href="/peminjaman/baru"
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500"
-          >
-            <Plus className="h-4 w-4" />
-            Buat Peminjaman
-          </Link>
-        )}
+        <Link
+          href="/peminjaman/baru"
+          className="hud-btn-primary inline-flex items-center gap-2 px-[22px] py-3 text-[12px]"
+        >
+          <Plus className="h-4 w-4" />
+          BUAT PEMINJAMAN
+        </Link>
       </div>
 
       {/* Status tabs */}
       <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-        <div className="inline-flex gap-1 rounded-xl border border-neutral-800 bg-white/[0.02] p-1">
-          {STATUS_TABS.map((tab) => (
-            <Link
-              key={tab.value}
-              href={`/peminjaman${tab.value ? `?status=${tab.value}` : ''}`}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm transition ${
-                status === tab.value
-                  ? 'bg-white/[0.08] text-white font-medium'
-                  : 'text-neutral-500 hover:text-neutral-300'
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
+        <div
+          className="mb-[18px] inline-flex gap-1 p-[5px] hud-clip-md"
+          style={{ border: '1px solid rgba(99,102,241,0.16)', background: 'rgba(255,255,255,0.02)' }}
+        >
+          {STATUS_TABS.map((tab) => {
+            const active = status === tab.value
+            return (
+              <Link
+                key={tab.value}
+                href={`/peminjaman${tab.value ? `?status=${tab.value}` : ''}`}
+                className="whitespace-nowrap px-3 py-2 text-[13px] transition hud-clip-sm"
+                style={{
+                  color: active ? '#fff' : '#6b7785',
+                  fontWeight: active ? 600 : 400,
+                  background: active ? 'rgba(92,132,255,0.14)' : 'transparent',
+                }}
+              >
+                {tab.label}
+              </Link>
+            )
+          })}
         </div>
       </div>
 
       {/* Table */}
-      <GlassCard className="overflow-x-auto">
-        <table className="w-full min-w-[640px]">
+      <div className="hud-panel overflow-x-auto">
+        <table className="w-full min-w-[620px] border-collapse">
           <thead>
-            <tr className="border-b border-neutral-800 text-left">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">ID</th>
-              {isAdmin && (
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Peminjam</th>
-              )}
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Alat</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Tanggal</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Status</th>
+            <tr style={{ borderBottom: '1px solid rgba(99,102,241,0.16)' }}>
+              <th className="hud-label px-4 py-3 text-left text-[10px]" style={{ color: '#6b7785' }}>ID</th>
+              <th className="hud-label px-4 py-3 text-left text-[10px]" style={{ color: '#6b7785' }}>Alat</th>
+              <th className="hud-label px-4 py-3 text-left text-[10px]" style={{ color: '#6b7785' }}>Tanggal</th>
+              <th className="hud-label px-4 py-3 text-left text-[10px]" style={{ color: '#6b7785' }}>Status</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-800">
+          <tbody>
             {peminjamans.map((p) => (
-              <tr key={p.id} className="transition hover:bg-white/[0.02]">
-                <td className="px-4 py-3 text-sm text-neutral-400">#{p.id}</td>
-                {isAdmin && (
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-white">{p.user.name}</p>
-                    <p className="text-xs text-neutral-500">{p.user.kelas ?? '-'}</p>
-                  </td>
-                )}
+              <tr key={p.id} style={{ borderBottom: '1px solid rgba(99,102,241,0.08)' }}>
+                <td className="px-4 py-3 text-[13px]" style={{ color: '#8a97a3' }}>#{p.id}</td>
                 <td className="px-4 py-3">
-                  <p className="text-sm text-white line-clamp-1">
+                  <p className="text-[13.5px] line-clamp-1" style={{ color: '#e8edf2' }}>
                     {p.details.map((d) => d.alat.nama).join(', ')}
                     {p.totalItems > p.details.length && ` +${p.totalItems - p.details.length} lainnya`}
                   </p>
-                  <p className="text-xs text-neutral-500">{p.totalItems} item</p>
+                  <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{p.totalItems} item</p>
                 </td>
-                <td className="px-4 py-3 text-sm text-neutral-400">{formatDate(p.tanggalPinjam)}</td>
+                <td className="px-4 py-3 text-[13px]" style={{ color: '#8a97a3' }}>{formatDate(p.tanggalPinjam)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={p.status} />
                 </td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/peminjaman/${p.id}`}
-                    className="text-xs text-blue-400 hover:text-blue-300"
+                    className="whitespace-nowrap text-[12.5px] font-semibold"
+                    style={{ color: '#5c84ff' }}
                   >
                     Detail →
                   </Link>
@@ -253,26 +249,32 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
           </tbody>
         </table>
         {peminjamans.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-neutral-600">
+          <div className="flex flex-col items-center justify-center py-12" style={{ color: '#6b7785' }}>
             <PackageCheck className="mb-2 h-10 w-10" />
             <p>Tidak ada peminjaman</p>
           </div>
         )}
-      </GlassCard>
+      </div>
 
       {pages > 1 && (
-        <div className="flex flex-wrap justify-center gap-2">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={`/peminjaman?${new URLSearchParams({ ...(status && { status }), page: String(p) })}`}
-              className={`min-w-[40px] rounded-lg px-3 py-2 text-center text-sm ${
-                p === page ? 'bg-blue-600 text-white' : 'border border-neutral-700 text-neutral-400 hover:text-white'
-              }`}
-            >
-              {p}
-            </Link>
-          ))}
+        <div className="mt-[18px] flex flex-wrap justify-center gap-2">
+          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
+            const active = p === page
+            return (
+              <Link
+                key={p}
+                href={`/peminjaman?${new URLSearchParams({ ...(status && { status }), page: String(p) })}`}
+                className="min-w-[40px] px-3 py-2 text-center text-[13px] hud-clip-sm"
+                style={
+                  active
+                    ? { color: '#fff', background: 'linear-gradient(135deg, #2563eb, #9333ea)' }
+                    : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
+                }
+              >
+                {p}
+              </Link>
+            )
+          })}
         </div>
       )}
     </div>

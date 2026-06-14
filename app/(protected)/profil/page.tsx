@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { ProfilForm } from './ProfilForm'
 
 export default async function ProfilPage() {
@@ -22,49 +21,67 @@ export default async function ProfilPage() {
     } catch {}
   }
 
+  const roleLabel = user.role === 'siswa' ? 'Siswa' : user.role
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Profil</h1>
-        <p className="text-sm text-neutral-400">Informasi akun dan kelompok kamu</p>
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-6 hud-rise">
+        <h1 className="hud-title" style={{ fontSize: 24 }}>Profil Saya</h1>
+        <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>
+          Kelola data akun &amp; kelompok
+        </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <GlassCard className="p-5">
-          {/* Header */}
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white">
+      <div
+        className="grid gap-4"
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}
+      >
+        {/* account */}
+        <div className="hud-panel hud-accent-top hud-rise p-[22px]">
+          <div className="mb-5 flex items-center gap-3.5">
+            <div
+              className="hud-hex flex shrink-0 items-center justify-center"
+              style={{
+                width: 56,
+                height: 56,
+                background: 'linear-gradient(135deg, #2563eb, #9333ea)',
+                fontFamily: 'var(--font-orbitron), sans-serif',
+                fontSize: 22,
+                fontWeight: 800,
+                color: '#fff',
+              }}
+            >
               {user.name[0].toUpperCase()}
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-white">Informasi Akun</h2>
-              <p className="text-xs text-neutral-500">Detail data diri siswa aktif</p>
+              <p className="text-[18px] font-bold" style={{ color: '#f0f4f8' }}>{user.name}</p>
+              <p className="mt-1 text-[13px]" style={{ color: '#5c84ff' }}>{user.kelas ?? '-'}</p>
             </div>
           </div>
 
-          {/* Fields */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-white/[0.04] p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">Nama</p>
-              <p className="text-sm font-medium text-white">{user.name}</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between">
+              <span className="text-[13.5px]" style={{ color: '#6b7785' }}>Nama</span>
+              <span className="text-[13.5px]" style={{ color: '#e8edf2' }}>{user.name}</span>
             </div>
-            <div className="rounded-lg bg-white/[0.04] p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">Kelas</p>
-              <p className="text-sm font-medium text-white">{user.kelas ?? '-'}</p>
+            <div className="flex justify-between gap-3">
+              <span className="text-[13.5px]" style={{ color: '#6b7785' }}>Email</span>
+              <span className="truncate text-[13.5px]" style={{ color: '#e8edf2' }}>{user.email}</span>
             </div>
-            <div className="col-span-2 rounded-lg bg-white/[0.04] p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">Email</p>
-              <p className="text-sm font-medium text-blue-400">{user.email}</p>
+            <div className="flex justify-between">
+              <span className="text-[13.5px]" style={{ color: '#6b7785' }}>Kelas</span>
+              <span className="text-[13.5px]" style={{ color: '#e8edf2' }}>{user.kelas ?? '-'}</span>
             </div>
-            <div className="col-span-2 rounded-lg bg-white/[0.04] p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-500">Role</p>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-white capitalize">{user.role === 'siswa' ? 'Siswa' : user.role}</p>
-                <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-              </div>
+            <div className="flex justify-between">
+              <span className="text-[13.5px]" style={{ color: '#6b7785' }}>Role</span>
+              <span className="text-[13.5px] capitalize" style={{ color: '#e8edf2' }}>{roleLabel}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[13.5px]" style={{ color: '#6b7785' }}>Status</span>
+              <span className="text-[13.5px]" style={{ color: '#22c55e' }}>Aktif</span>
             </div>
           </div>
-        </GlassCard>
+        </div>
 
         <ProfilForm kelompok={user.kelompok} anggota={anggota} />
       </div>

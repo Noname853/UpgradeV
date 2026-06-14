@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { StockBadge } from '@/components/shared/StockBadge'
 import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users } from 'lucide-react'
 import Link from 'next/link'
@@ -132,23 +131,34 @@ export default function BuatPeminjamanPage() {
     }
   }
 
-  const inputClass =
-    'w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30'
-
   const diluarJam = statusWaktu !== null && !statusWaktu.boleh
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Link href="/peminjaman" className="rounded-lg border border-neutral-800 p-2 text-neutral-400 hover:text-white">
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-5 flex flex-wrap items-center gap-3 hud-rise">
+        <Link
+          href="/peminjaman"
+          className="flex h-[38px] w-[38px] items-center justify-center hud-clip-sm"
+          style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-white sm:text-2xl">Buat Peminjaman</h1>
-          <p className="text-sm text-neutral-400">Ajukan permintaan peminjaman alat</p>
+          <h1 className="hud-title" style={{ fontSize: 22 }}>Buat Peminjaman</h1>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Ajukan permintaan peminjaman alat</p>
         </div>
         {statusWaktu && (
-          <div className="flex w-full items-center gap-1.5 rounded-lg border border-neutral-800 bg-white/[0.03] px-3 py-1.5 text-xs text-neutral-400 sm:ml-auto sm:w-auto">
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] hud-clip-sm"
+            style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.2)' }}
+          >
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{
+                background: statusWaktu.boleh ? '#22c55e' : '#ef4444',
+                boxShadow: `0 0 8px ${statusWaktu.boleh ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'}`,
+              }}
+            />
             <Clock className="h-3.5 w-3.5" />
             {statusWaktu.hariSekarang}, {statusWaktu.waktuSekarang}
           </div>
@@ -156,13 +166,19 @@ export default function BuatPeminjamanPage() {
       </div>
 
       {diluarJam && (
-        <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-4">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" />
+        <div
+          className="mb-4 flex items-start gap-3 px-4 py-4 hud-clip-md"
+          style={{
+            background: 'linear-gradient(160deg, rgba(234,179,8,0.09), rgba(255,255,255,0.01))',
+            border: '1px solid rgba(234,179,8,0.3)',
+          }}
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" style={{ color: '#eab308' }} />
           <div>
-            <p className="text-sm font-semibold text-yellow-300">
+            <p className="text-[14px] font-semibold" style={{ color: '#fde68a' }}>
               Pengajuan pinjaman tidak tersedia saat ini
             </p>
-            <p className="mt-0.5 text-sm text-yellow-400/80">
+            <p className="mt-0.5 text-[13px]" style={{ color: '#eab308' }}>
               Tolong sesuaikan waktu Hari dan Tanggal saat ini. Pengajuan hanya dapat dilakukan pada{' '}
               <strong>Senin–Sabtu, 07:00–17:00</strong>.
             </p>
@@ -171,28 +187,39 @@ export default function BuatPeminjamanPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
+        <div
+          className="grid items-start gap-4"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}
+        >
+          <div className="space-y-3.5 lg:col-span-2">
             {/* Items */}
-            <GlassCard className="p-5">
-              <h2 className="mb-4 text-sm font-semibold text-neutral-300">Alat yang Dipinjam</h2>
+            <div className="hud-panel p-[22px]">
+              <h2 className="hud-label mb-4 text-[12px]" style={{ color: '#c3ccd6' }}>Alat yang Dipinjam</h2>
               <div className="space-y-3">
                 {items.map((item, idx) => (
-                  <div key={idx} className="rounded-lg border border-neutral-800 p-3">
+                  <div
+                    key={idx}
+                    className="p-3 hud-clip-sm"
+                    style={{ border: '1px solid rgba(99,102,241,0.16)' }}
+                  >
                     {/* Alat search */}
-                    <div className="relative mb-2">
+                    <div className="relative mb-2.5">
                       {item.alat ? (
-                        <div className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-3 py-2">
+                        <div
+                          className="flex items-center justify-between gap-2 px-3 py-2 hud-clip-sm"
+                          style={{ background: 'rgba(255,255,255,0.03)' }}
+                        >
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-white">{item.alat.nama}</p>
-                            <p className="text-xs text-neutral-500">{item.alat.kode}</p>
+                            <p className="truncate text-[14px] font-semibold" style={{ color: '#fff' }}>{item.alat.nama}</p>
+                            <p className="text-[12px]" style={{ color: '#6b7785' }}>{item.alat.kode}</p>
                           </div>
-                          <div className="flex shrink-0 items-center gap-1">
+                          <div className="flex shrink-0 items-center gap-2">
                             <StockBadge stok={item.alat.stok} stokTersedia={item.alat.stokTersedia} />
                             <button
                               type="button"
                               onClick={() => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, alatId: 0, alat: null } : it))}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-neutral-500 hover:bg-white/[0.05] hover:text-white"
+                              className="flex h-8 w-8 items-center justify-center text-[18px]"
+                              style={{ color: '#6b7785' }}
                               aria-label="Hapus pilihan alat"
                             >
                               ×
@@ -202,27 +229,35 @@ export default function BuatPeminjamanPage() {
                       ) : (
                         <div>
                           <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
                             <input
-                              placeholder="Cari alat..."
+                              placeholder="Cari alat untuk ditambahkan..."
                               value={searchIdx === idx ? searchQuery : ''}
                               onFocus={() => setSearchIdx(idx)}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className={`${inputClass} pl-9`}
+                              className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
                             />
                           </div>
                           {searchIdx === idx && searchResults.length > 0 && (
-                            <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-900 shadow-xl">
+                            <div
+                              className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto hud-clip-sm"
+                              style={{
+                                background: '#0d1117',
+                                border: '1px solid rgba(99,102,241,0.3)',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                              }}
+                            >
                               {searchResults.map((a) => (
                                 <button
                                   key={a.id}
                                   type="button"
                                   onClick={() => selectAlat(idx, a)}
-                                  className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-sm transition hover:bg-white/[0.05]"
+                                  className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-[14px] transition"
+                                  style={{ color: '#e8edf2' }}
                                 >
                                   <div className="min-w-0 flex-1">
-                                    <p className="truncate text-white">{a.nama}</p>
-                                    <p className="text-xs text-neutral-500">{a.kode}</p>
+                                    <p className="truncate" style={{ color: '#fff' }}>{a.nama}</p>
+                                    <p className="text-[12px]" style={{ color: '#6b7785' }}>{a.kode}</p>
                                   </div>
                                   <StockBadge stok={a.stok} stokTersedia={a.stokTersedia} />
                                 </button>
@@ -234,30 +269,31 @@ export default function BuatPeminjamanPage() {
                     </div>
                     <div className="flex items-end gap-2">
                       <div className="w-20 sm:w-24">
-                        <label className="mb-1 block text-xs text-neutral-500">Jumlah</label>
+                        <label className="mb-1.5 block text-[12px]" style={{ color: '#6b7785' }}>Jumlah</label>
                         <input
                           type="number"
                           min="1"
                           max={item.alat?.stokTersedia ?? 99}
                           value={item.jumlah}
                           onChange={(e) => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, jumlah: parseInt(e.target.value) || 1 } : it))}
-                          className={inputClass}
+                          className="hud-input w-full px-3 py-2.5 text-[14px]"
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <label className="mb-1 block text-xs text-neutral-500">Keterangan</label>
+                        <label className="mb-1.5 block text-[12px]" style={{ color: '#6b7785' }}>Keterangan</label>
                         <input
                           placeholder="Opsional"
                           value={item.keterangan}
                           onChange={(e) => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, keterangan: e.target.value } : it))}
-                          className={inputClass}
+                          className="hud-input w-full px-3 py-2.5 text-[14px]"
                         />
                       </div>
                       {items.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeItem(idx)}
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/10"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center hud-clip-sm"
+                          style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
                           aria-label="Hapus item"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -270,83 +306,94 @@ export default function BuatPeminjamanPage() {
               <button
                 type="button"
                 onClick={addItem}
-                className="mt-3 flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300"
+                className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-semibold"
+                style={{ color: '#5c84ff' }}
               >
                 <Plus className="h-4 w-4" />
                 Tambah Alat
               </button>
-            </GlassCard>
+            </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {kelompok && (
-              <GlassCard className="p-5">
-                <div className="mb-3 flex items-center justify-between">
+              <div className="hud-panel p-[18px]">
+                <div className="mb-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-blue-400" />
-                    <h2 className="text-sm font-semibold text-neutral-300">Kelompok</h2>
+                    <Users className="h-4 w-4" style={{ color: '#5c84ff' }} />
+                    <h2 className="hud-label text-[11px]" style={{ color: '#c3ccd6' }}>Kelompok</h2>
                   </div>
-                  <Link href="/profil" className="text-xs text-blue-400 hover:text-blue-300">
+                  <Link href="/profil" className="text-[12px] font-semibold" style={{ color: '#5c84ff' }}>
                     Edit →
                   </Link>
                 </div>
                 {kelompok.kelompok && (
-                  <p className="mb-2 text-sm font-medium text-white">{kelompok.kelompok}</p>
+                  <p className="mb-2 text-[14px] font-semibold" style={{ color: '#e8edf2' }}>{kelompok.kelompok}</p>
                 )}
                 {kelompok.anggotaKelompok.length > 0 && (
-                  <ul className="space-y-1">
+                  <ul className="flex flex-col gap-1.5">
                     {kelompok.anggotaKelompok.map((nama, i) => (
-                      <li key={i} className="text-xs text-neutral-400">• {nama}</li>
+                      <li key={i} className="text-[12.5px]" style={{ color: '#8a97a3' }}>• {nama}</li>
                     ))}
                   </ul>
                 )}
-              </GlassCard>
+              </div>
             )}
 
-            <GlassCard className="p-5">
-              <h2 className="mb-4 text-sm font-semibold text-neutral-300">Informasi Peminjaman</h2>
+            <div className="hud-panel p-[18px]">
+              <h2 className="hud-label mb-3.5 text-[11px]" style={{ color: '#c3ccd6' }}>Informasi Peminjaman</h2>
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-sm text-neutral-300">Keperluan *</label>
+                  <label className="mb-1.5 block text-[13px]" style={{ color: '#b3bdc7' }}>Keperluan *</label>
                   <input
                     value={keperluan}
                     onChange={(e) => setKeperluan(e.target.value)}
                     placeholder="Praktikum jaringan..."
-                    className={inputClass}
+                    className="hud-input w-full px-3 py-2.5 text-[14px]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm text-neutral-300">Batas Kembali</label>
+                  <label className="mb-1.5 block text-[13px]" style={{ color: '#b3bdc7' }}>Batas Kembali</label>
                   <input
                     type="date"
                     value={tanggalBatas}
                     onChange={(e) => setTanggalBatas(e.target.value)}
-                    className={inputClass}
+                    className="hud-input w-full px-3 py-2.5 text-[14px]"
+                    style={{ color: '#c3ccd6' }}
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm text-neutral-300">Catatan</label>
+                  <label className="mb-1.5 block text-[13px]" style={{ color: '#b3bdc7' }}>Catatan</label>
                   <textarea
                     rows={3}
                     value={catatan}
                     onChange={(e) => setCatatan(e.target.value)}
                     placeholder="Catatan tambahan..."
-                    className={inputClass}
+                    className="hud-input w-full resize-y px-3 py-2.5 text-[14px]"
                   />
                 </div>
               </div>
-            </GlassCard>
+            </div>
 
             {error && (
-              <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
+              <p
+                className="px-3 py-2 text-[13px] hud-clip-sm"
+                style={{
+                  color: '#fca5a5',
+                  background: 'rgba(239,68,68,0.1)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                }}
+              >
+                {error}
+              </p>
             )}
 
             <button
               type="submit"
               disabled={loading || diluarJam}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="hud-btn-primary w-full px-[18px] py-3 text-[12px] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading ? 'Mengajukan...' : diluarJam ? 'Di luar jam operasional' : 'Ajukan Peminjaman'}
+              {loading ? 'MENGAJUKAN...' : diluarJam ? 'DI LUAR JAM OPERASIONAL' : 'AJUKAN PEMINJAMAN'}
             </button>
           </div>
         </div>

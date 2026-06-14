@@ -1,11 +1,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { StatCard } from '@/components/dashboard/StatCard'
 import { ActivityChart } from '@/components/dashboard/ActivityChart'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { GlassCard } from '@/components/shared/GlassCard'
 import { formatDate } from '@/lib/utils'
-import { PackageCheck, Clock, CheckCircle } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
 
 async function getChartData() {
@@ -210,81 +208,122 @@ export default async function DashboardPage() {
     }),
   ])
 
+  const siswaStats = [
+    { title: 'Sedang Dipinjam', value: peminjamanAktif.length, color: '#3b82f6' },
+    { title: 'Menunggu Verifikasi', value: menungguVerifikasi, color: '#eab308' },
+    { title: 'Total Peminjaman', value: riwayat.length, color: '#22c55e' },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-neutral-400">Halo, {session?.user.name}</p>
+    <div className="mx-auto max-w-[1120px]">
+      <div className="mb-6 hud-rise">
+        <h1 className="hud-title" style={{ fontSize: 26 }}>Dashboard</h1>
+        <p className="mt-1.5 text-[15px]" style={{ color: '#8a97a3' }}>
+          Halo, {session?.user.name}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="Sedang Dipinjam" value={peminjamanAktif.length} icon={PackageCheck} color="blue" />
-        <StatCard title="Menunggu Verifikasi" value={menungguVerifikasi} icon={Clock} color="yellow" />
-        <StatCard title="Total Peminjaman" value={riwayat.length} icon={CheckCircle} color="green" />
+      {/* stat grid */}
+      <div
+        className="mb-[22px] grid gap-[13px]"
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}
+      >
+        {siswaStats.map((s) => (
+          <div
+            key={s.title}
+            className="hud-panel hud-accent-top hud-rise p-5"
+            style={{
+              background: `linear-gradient(160deg, ${s.color}12, rgba(255,255,255,0.012))`,
+              border: `1px solid ${s.color}38`,
+              ['--hud-blue2' as string]: s.color,
+            }}
+          >
+            <p className="text-[13px] font-semibold" style={{ color: '#8a97a3' }}>{s.title}</p>
+            <p className="hud-title mt-1.5 text-[32px]" style={{ color: '#fff' }}>{s.value}</p>
+            <span
+              className="hud-diamond absolute"
+              style={{ right: 14, top: 14, width: 12, height: 12, background: s.color, boxShadow: `0 0 12px ${s.color}99` }}
+            />
+          </div>
+        ))}
       </div>
 
-      <div className="flex gap-3">
+      {/* quick actions */}
+      <div className="mb-[22px] flex flex-wrap gap-2.5">
         <Link
           href="/peminjaman/baru"
-          className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500"
+          className="hud-btn-primary inline-flex items-center gap-2 px-[22px] py-3 text-[12px]"
         >
-          Buat Peminjaman
+          + BUAT PEMINJAMAN
         </Link>
         <Link
           href="/alat"
-          className="rounded-lg border border-neutral-700 px-4 py-2.5 text-sm text-neutral-300 transition hover:border-neutral-600 hover:text-white"
+          className="hud-btn-ghost inline-flex items-center gap-2 px-[22px] py-3 text-[12px]"
         >
-          Lihat Alat
+          LIHAT ALAT
         </Link>
       </div>
 
+      {/* active loans */}
       {peminjamanAktif.length > 0 && (
-        <GlassCard className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-neutral-300">Peminjaman Aktif Saya</h2>
-          <div className="space-y-3">
+        <div className="hud-panel hud-rise mb-4 p-5">
+          <h2 className="hud-label mb-3.5 text-[12px]" style={{ color: '#c3ccd6' }}>
+            Peminjaman Aktif Saya
+          </h2>
+          <div className="flex flex-col gap-1">
             {peminjamanAktif.map((p) => (
               <Link
                 key={p.id}
                 href={`/peminjaman/${p.id}`}
-                className="flex items-center justify-between rounded-lg p-2 transition hover:bg-white/[0.03]"
+                className="flex items-center justify-between gap-2.5 px-3 py-2.5 transition"
+                style={{ borderLeft: '2px solid rgba(99,102,241,0.2)' }}
               >
-                <div>
-                  <p className="text-sm font-medium text-white">
+                <div className="min-w-0">
+                  <p className="truncate text-[14.5px] font-semibold" style={{ color: '#e8edf2' }}>
                     {p.details.map((d) => d.alat.nama).join(', ')}
                   </p>
-                  <p className="text-xs text-neutral-500">{formatDate(p.tanggalPinjam)}</p>
+                  <p className="mt-0.5 text-[12px]" style={{ color: '#6b7785' }}>
+                    {formatDate(p.tanggalPinjam)}
+                  </p>
                 </div>
                 <StatusBadge status={p.status} />
               </Link>
             ))}
           </div>
-        </GlassCard>
+        </div>
       )}
 
-      <GlassCard className="p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-300">Riwayat Peminjaman</h2>
-          <Link href="/peminjaman" className="text-xs text-blue-400">Lihat semua →</Link>
+      {/* history */}
+      <div className="hud-panel hud-rise p-5">
+        <div className="mb-3.5 flex items-center justify-between">
+          <h2 className="hud-label text-[12px]" style={{ color: '#c3ccd6' }}>Riwayat Peminjaman</h2>
+          <Link href="/peminjaman" className="text-[12px] font-semibold" style={{ color: '#5c84ff' }}>
+            Lihat semua →
+          </Link>
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col">
           {riwayat.map((p) => (
             <Link
               key={p.id}
               href={`/peminjaman/${p.id}`}
-              className="flex items-center justify-between rounded-lg p-2 transition hover:bg-white/[0.03]"
+              className="flex items-center justify-between gap-2.5 px-3 py-2.5"
             >
-              <div>
-                <p className="text-sm text-white">{p.details[0]?.alat.nama ?? '-'}</p>
-                <p className="text-xs text-neutral-500">{formatDate(p.tanggalPinjam)}</p>
+              <div className="min-w-0">
+                <p className="truncate text-[14px]" style={{ color: '#e8edf2' }}>
+                  {p.details[0]?.alat.nama ?? '-'}
+                </p>
+                <p className="mt-0.5 text-[12px]" style={{ color: '#6b7785' }}>
+                  {formatDate(p.tanggalPinjam)}
+                </p>
               </div>
               <StatusBadge status={p.status} />
             </Link>
           ))}
           {riwayat.length === 0 && (
-            <p className="text-center text-sm text-neutral-600 py-4">Belum ada riwayat peminjaman</p>
+            <p className="py-4 text-center text-sm" style={{ color: '#6b7785' }}>Belum ada riwayat peminjaman</p>
           )}
         </div>
-      </GlassCard>
+      </div>
     </div>
   )
 }
