@@ -57,6 +57,142 @@ body {
   border-radius: 12px;
 }
 
+/* =========================================================================
+   HUD / Transformers theme — ADMIN PANEL ONLY
+   Reusable design-system classes. Applied only inside admin-gated markup,
+   so the siswa (student) UI keeps the original look untouched.
+   ========================================================================= */
+
+/* Color tokens */
+:root {
+  --hud-bg: #08090c;
+  --hud-text: #e8edf2;
+  --hud-muted: #8a97a3;
+  --hud-dim: #6b7785;
+  --hud-blue: #5c84ff;
+  --hud-blue2: #3b82f6;
+  --hud-purple: #a855f7;
+  --hud-purple2: #9333ea;
+  --hud-line: rgba(99, 102, 241, 0.16);
+  --hud-line-strong: rgba(99, 102, 241, 0.3);
+}
+
+/* Root surface for the admin shell */
+.hud-root {
+  background: var(--hud-bg);
+  color: var(--hud-text);
+  font-family: var(--font-rajdhani), system-ui, sans-serif;
+}
+
+/* Orbitron headings */
+.hud-title {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #f0f4f8;
+}
+.hud-label {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Angled-corner clips (Transformers chamfer) */
+.hud-clip-sm { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.hud-clip-md { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+.hud-clip-lg { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+
+/* Panels / cards */
+.hud-panel {
+  position: relative;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  border: 1px solid var(--hud-line);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.hud-card-hover {
+  transition: border-color 0.2s, transform 0.2s;
+}
+.hud-card-hover:hover {
+  border-color: rgba(92, 132, 255, 0.5);
+  transform: translateY(-3px);
+}
+
+/* Buttons */
+.hud-btn-primary {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #9333ea);
+  box-shadow: 0 0 20px rgba(92, 132, 255, 0.3);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: filter 0.2s, transform 0.2s;
+}
+.hud-btn-primary:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.hud-btn-ghost {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #c3ccd6;
+  border: 1px solid var(--hud-line-strong);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: border-color 0.2s, color 0.2s;
+}
+.hud-btn-ghost:hover { border-color: var(--hud-blue); color: #fff; }
+.hud-btn-danger {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  transition: border-color 0.2s;
+}
+.hud-btn-danger:hover { border-color: #ef4444; }
+
+/* Inputs */
+.hud-input {
+  font-family: var(--font-rajdhani), sans-serif;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  outline: none;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: border-color 0.18s;
+}
+.hud-input:focus { border-color: var(--hud-blue2); }
+
+/* Hexagon / diamond decorations */
+.hud-hex { clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); }
+.hud-hex-wide { clip-path: polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%); }
+.hud-diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+/* Top accent bar inside panels */
+.hud-accent-top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--hud-blue2), transparent);
+}
+
+/* Animations (lightweight — transform/opacity only) */
+@keyframes apRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes apBlink { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.35; } }
+@keyframes apScan { 0% { transform: translateY(-30px); opacity: 0; } 12% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(var(--scanend, 200px)); opacity: 0; } }
+.hud-rise { animation: apRise 0.5s ease-out both; }
+.hud-blink { animation: apBlink 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hud-rise, .hud-blink { animation: none !important; }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

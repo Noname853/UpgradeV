@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   children: React.ReactNode
@@ -13,6 +14,7 @@ interface Props {
 
 export function ProtectedLayoutClient({ children, userName, userRole }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const isAdmin = userRole === 'admin'
 
   // close drawer on resize to desktop
   useEffect(() => {
@@ -24,7 +26,10 @@ export function ProtectedLayoutClient({ children, userName, userRole }: Props) {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-black">
+    <div
+      className={cn('flex h-screen overflow-hidden', isAdmin ? 'hud-root' : 'bg-black')}
+      style={isAdmin ? { background: 'var(--hud-bg)' } : undefined}
+    >
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar role={userRole} />

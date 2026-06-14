@@ -5,7 +5,7 @@ import { ActivityChart } from '@/components/dashboard/ActivityChart'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { GlassCard } from '@/components/shared/GlassCard'
 import { formatDate } from '@/lib/utils'
-import { Wrench, Users, PackageCheck, Clock, AlertTriangle, CheckCircle } from 'lucide-react'
+import { PackageCheck, Clock, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 
 async function getChartData() {
@@ -60,78 +60,135 @@ export default async function DashboardPage() {
         getChartData(),
       ])
 
+    const stats = [
+      { title: 'Total Alat', value: totalAlat, color: '#3b82f6' },
+      { title: 'Total Siswa', value: totalUser, color: '#a855f7' },
+      { title: 'Dipinjam', value: peminjamanAktif, color: '#22c55e' },
+      { title: 'Menunggu', value: menungguVerifikasi, color: '#eab308', desc: 'Butuh verifikasi' },
+      { title: 'Stok Rendah', value: stokRendah, color: '#ef4444', desc: '≤ 5 unit' },
+      { title: 'Kembali Bulan Ini', value: dikembalikanBulanIni, color: '#22c55e' },
+    ]
+
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-neutral-400">Selamat datang, {session?.user.name}</p>
+      <div className="mx-auto max-w-[1120px]">
+        <div className="mb-6 hud-rise">
+          <h1 className="hud-title" style={{ fontSize: 26 }}>Dashboard</h1>
+          <p className="mt-1.5 text-[15px]" style={{ color: '#8a97a3' }}>
+            Selamat datang, {session?.user.name}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-          <StatCard title="Total Alat" value={totalAlat} icon={Wrench} color="blue" />
-          <StatCard title="Total Siswa" value={totalUser} icon={Users} color="purple" />
-          <StatCard title="Dipinjam" value={peminjamanAktif} icon={PackageCheck} color="green" />
-          <StatCard title="Menunggu" value={menungguVerifikasi} icon={Clock} color="yellow" description="Butuh verifikasi" />
-          <StatCard title="Stok Rendah" value={stokRendah} icon={AlertTriangle} color="red" description="≤ 5 unit" />
-          <StatCard title="Kembali Bulan Ini" value={dikembalikanBulanIni} icon={CheckCircle} color="green" />
+        {/* stat grid */}
+        <div
+          className="mb-[22px] grid gap-[13px]"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(165px, 1fr))' }}
+        >
+          {stats.map((s) => (
+            <div
+              key={s.title}
+              className="hud-panel hud-accent-top hud-rise p-[18px]"
+              style={{
+                background: `linear-gradient(160deg, ${s.color}12, rgba(255,255,255,0.012))`,
+                border: `1px solid ${s.color}38`,
+                ['--hud-blue2' as string]: s.color,
+              }}
+            >
+              <p className="text-[13px] font-semibold" style={{ color: '#8a97a3' }}>{s.title}</p>
+              <p className="hud-title mt-1.5 text-[30px]" style={{ color: '#fff' }}>{s.value}</p>
+              {s.desc && <p className="mt-1 text-[11px]" style={{ color: '#6b7785' }}>{s.desc}</p>}
+              <span
+                className="hud-diamond absolute"
+                style={{ right: 14, top: 14, width: 12, height: 12, background: s.color, boxShadow: `0 0 12px ${s.color}99` }}
+              />
+            </div>
+          ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <GlassCard className="p-5">
-            <h2 className="mb-4 text-sm font-semibold text-neutral-300">Aktivitas 1 Bulan Terakhir</h2>
+        {/* chart + recent */}
+        <div
+          className="mb-[18px] grid gap-4"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))' }}
+        >
+          <div className="hud-panel p-5">
+            <h2 className="hud-label mb-4 text-[12px]" style={{ color: '#c3ccd6' }}>
+              Aktivitas 6 Bulan Terakhir
+            </h2>
             <ActivityChart data={chartData} />
-          </GlassCard>
+          </div>
 
-          <GlassCard className="p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-neutral-300">Peminjaman Terbaru</h2>
-              <Link href="/peminjaman" className="text-xs text-blue-400 hover:text-blue-300">
+          <div className="hud-panel p-5">
+            <div className="mb-3.5 flex items-center justify-between">
+              <h2 className="hud-label text-[12px]" style={{ color: '#c3ccd6' }}>
+                Peminjaman Terbaru
+              </h2>
+              <Link href="/peminjaman" className="text-[12px] font-semibold" style={{ color: '#5c84ff' }}>
                 Lihat semua →
               </Link>
             </div>
-            <div className="space-y-3">
+            <div className="flex flex-col gap-1">
               {recentPeminjaman.map((p) => (
                 <Link
                   key={p.id}
                   href={`/peminjaman/${p.id}`}
-                  className="flex items-center justify-between rounded-lg p-2 transition hover:bg-white/[0.03]"
+                  className="flex items-center justify-between gap-2.5 px-2.5 py-2 transition"
+                  style={{ borderLeft: '2px solid rgba(99,102,241,0.2)' }}
                 >
-                  <div>
-                    <p className="text-sm font-medium text-white">{p.user.name}</p>
-                    <p className="text-xs text-neutral-500">{p.details[0]?.alat.nama ?? '-'} · {formatDate(p.tanggalPinjam)}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-semibold" style={{ color: '#e8edf2' }}>{p.user.name}</p>
+                    <p className="truncate text-[12px]" style={{ color: '#6b7785' }}>
+                      {p.details[0]?.alat.nama ?? '-'} · {formatDate(p.tanggalPinjam)}
+                    </p>
                   </div>
                   <StatusBadge status={p.status} />
                 </Link>
               ))}
               {recentPeminjaman.length === 0 && (
-                <p className="text-center text-sm text-neutral-600 py-4">Belum ada peminjaman</p>
+                <p className="py-4 text-center text-sm" style={{ color: '#6b7785' }}>Belum ada peminjaman</p>
               )}
             </div>
-          </GlassCard>
+          </div>
         </div>
 
+        {/* verify alert */}
         {menungguVerifikasi > 0 && (
-          <GlassCard className="border-yellow-500/20 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-yellow-500/10 p-2">
-                  <Clock className="h-4 w-4 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    {menungguVerifikasi} peminjaman menunggu verifikasi
-                  </p>
-                  <p className="text-xs text-neutral-500">Segera proses agar siswa bisa meminjam</p>
-                </div>
-              </div>
-              <Link
-                href="/peminjaman?status=menunggu_verifikasi"
-                className="rounded-lg bg-yellow-500/10 px-3 py-1.5 text-sm text-yellow-400 transition hover:bg-yellow-500/20"
+          <div
+            className="hud-panel flex flex-wrap items-center justify-between gap-3.5 p-[18px]"
+            style={{
+              background: 'linear-gradient(160deg, rgba(234,179,8,0.09), rgba(255,255,255,0.01))',
+              border: '1px solid rgba(234,179,8,0.28)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="hud-hex-wide flex h-[38px] w-[38px] items-center justify-center"
+                style={{ background: 'rgba(234,179,8,0.14)' }}
               >
-                Proses
-              </Link>
+                <Clock className="h-4 w-4" style={{ color: '#eab308' }} />
+              </div>
+              <div>
+                <p className="text-[14.5px] font-semibold" style={{ color: '#fff' }}>
+                  {menungguVerifikasi} peminjaman menunggu verifikasi
+                </p>
+                <p className="mt-0.5 text-[12.5px]" style={{ color: '#8a97a3' }}>
+                  Segera proses agar siswa bisa meminjam
+                </p>
+              </div>
             </div>
-          </GlassCard>
+            <Link
+              href="/peminjaman?status=menunggu_verifikasi"
+              className="hud-clip-sm px-4 py-2.5 text-[12px]"
+              style={{
+                fontFamily: 'var(--font-orbitron), sans-serif',
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: '#eab308',
+                background: 'rgba(234,179,8,0.12)',
+                border: '1px solid rgba(234,179,8,0.3)',
+              }}
+            >
+              PROSES
+            </Link>
+          </div>
         )}
       </div>
     )
