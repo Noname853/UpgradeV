@@ -44,3 +44,37 @@ export const alatUpdateSchema = z
   .object(alatBase)
   .partial()
   .strict()
+
+// ============================================================================
+// Skema user (dipakai oleh route admin /api/users)
+// Memberlakukan kebijakan password yang sama dengan /api/register: min 8, max 72
+// (bcrypt memotong di 72 byte). `.strict()` mencegah mass-assignment.
+// ============================================================================
+
+const passwordRule = z.string().min(8, 'Password minimal 8 karakter').max(72)
+const roleRule = z.enum(['admin', 'siswa'])
+const nullableStr = (max: number) =>
+  z.preprocess((v) => (v === '' || v == null ? null : v), z.string().max(max).nullable())
+
+export const userCreateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100),
+    email: z.string().email().max(200).transform((v) => v.toLowerCase()),
+    password: passwordRule,
+    role: roleRule.default('siswa'),
+    kelas: nullableStr(50).optional(),
+    kelompok: nullableStr(100).optional(),
+  })
+  .strict()
+
+export const userUpdateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100),
+    email: z.string().email().max(200).transform((v) => v.toLowerCase()),
+    password: passwordRule, // opsional via .partial() di bawah
+    role: roleRule,
+    kelas: nullableStr(50),
+    kelompok: nullableStr(100),
+  })
+  .partial()
+  .strict()

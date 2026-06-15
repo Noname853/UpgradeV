@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { alatCreateSchema } from '@/lib/validations'
+import { isSameOrigin } from '@/lib/csrf'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

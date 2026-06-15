@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { isSameOrigin } from '@/lib/csrf'
 
 function parseAnggota(value: string | null): string[] {
   if (!value) return []
@@ -29,6 +30,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

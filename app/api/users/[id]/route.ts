@@ -3,8 +3,12 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
+import { userUpdateSchema } from '@/lib/validations'
+import { isSameOrigin } from '@/lib/csrf'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -15,14 +19,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
 
   try {
-    const body = await req.json()
-    const { name, email, role, kelas, kelompok, password } = body
-
-    if (role !== undefined && role !== 'admin' && role !== 'siswa') {
-      return NextResponse.json({ error: 'Role tidak valid' }, { status: 400 })
+    const parsed = userUpdateSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
     }
-
-    const data: Record<string, unknown> = { name, email, role, kelas, kelompok }
+    const { password, ...rest } = parsed.data
+    const data: Record<string, unknown> = { ...rest }
     if (password) data.password = await bcrypt.hash(password, 12)
 
     const user = await prisma.user.update({
@@ -37,7 +39,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -77,7 +81,9 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

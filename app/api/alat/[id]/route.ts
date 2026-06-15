@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { alatUpdateSchema } from '@/lib/validations'
+import { isSameOrigin } from '@/lib/csrf'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -30,6 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -56,7 +58,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

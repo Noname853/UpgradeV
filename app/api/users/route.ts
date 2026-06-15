@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
+import { userCreateSchema } from '@/lib/validations'
+import { isSameOrigin } from '@/lib/csrf'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -36,29 +38,25 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const session = await auth()
   if (!session || session.user.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
-    const body = await req.json()
-    const { name, email, password, role, kelas, kelompok } = body
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Name, email, dan password wajib' }, { status: 400 })
+    const parsed = userCreateSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
     }
-
-    const finalRole = role ?? 'siswa'
-    if (finalRole !== 'admin' && finalRole !== 'siswa') {
-      return NextResponse.json({ error: 'Role tidak valid' }, { status: 400 })
-    }
+    const { name, email, password, role, kelas, kelompok } = parsed.data
 
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) return NextResponse.json({ error: 'Email sudah digunakan' }, { status: 400 })
 
     const hashed = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
-      data: { name, email, password: hashed, role: finalRole, kelas: kelas ?? null, kelompok: kelompok ?? null },
+      data: { name, email, password: hashed, role, kelas: kelas ?? null, kelompok: kelompok ?? null },
       select: { id: true, name: true, email: true, role: true, kelas: true },
     })
 
