@@ -171,7 +171,7 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
   }
 
   return (
-    <div className="mx-auto max-w-[1120px]">
+    <div>
       {/* header */}
       <div className="mb-5 hud-rise">
         <h1 className="hud-title" style={{ fontSize: 24 }}>Daftar Alat</h1>

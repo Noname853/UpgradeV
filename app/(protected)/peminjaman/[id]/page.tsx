@@ -163,7 +163,7 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
   }
 
   return (
-    <div className="mx-auto max-w-[1120px]">
+    <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 hud-rise">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Link

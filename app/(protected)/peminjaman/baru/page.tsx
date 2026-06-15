@@ -134,7 +134,7 @@ export default function BuatPeminjamanPage() {
   const diluarJam = statusWaktu !== null && !statusWaktu.boleh
 
   return (
-    <div className="mx-auto max-w-[1120px]">
+    <div>
       <div className="mb-5 flex flex-wrap items-center gap-3 hud-rise">
         <Link
           href="/peminjaman"

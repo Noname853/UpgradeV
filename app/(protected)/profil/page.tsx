@@ -24,7 +24,7 @@ export default async function ProfilPage() {
   const roleLabel = user.role === 'siswa' ? 'Siswa' : user.role
 
   return (
-    <div className="mx-auto max-w-[1120px]">
+    <div>
       <div className="mb-6 hud-rise">
         <h1 className="hud-title" style={{ fontSize: 24 }}>Profil Saya</h1>
         <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>
