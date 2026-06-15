@@ -110,7 +110,7 @@ export function Topbar({ userName, userRole, userKelas, onMenuToggle }: TopbarPr
               </p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={() => signOut({ callbackUrl: isAdmin ? '/login' : '/' })}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-400 transition-colors hover:text-red-400"
             >
               <LogOut className="h-4 w-4" />
