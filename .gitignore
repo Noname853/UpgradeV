@@ -60,3 +60,4 @@ next-env.d.ts
 /playwright/.cache/
 demo-kelas.html
 demo-cari-user.html
+demo-lebar-admin.html
