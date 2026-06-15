@@ -1,0 +1,19 @@
+# Compose mempermudah build + run: cukup `docker compose up --build`.
+# Nilai rahasia runtime (DATABASE_URL, AUTH_SECRET, dst.) dibaca dari file
+# .env.docker di host (lihat DOCKER.md). File itu TIDAK ikut ke image/git.
+services:
+  web:
+    build:
+      context: .
+      # ARG ini hanya untuk memuaskan `prisma generate` saat build.
+      # Nilai asli diberikan saat runtime lewat env_file di bawah.
+      args:
+        AUTH_SECRET: build-placeholder
+        DATABASE_URL: file:./dev.db
+    image: inventaris-tkj
+    container_name: inventaris-tkj
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    restart: unless-stopped
