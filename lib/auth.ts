@@ -11,6 +11,11 @@ if (!authSecret) {
   throw new Error('AUTH_SECRET environment variable is required')
 }
 
+// Hash bcrypt valid (cost 12) untuk dibandingkan saat user tidak ditemukan.
+// Tujuannya menyamakan waktu respons antara "email tidak ada" dan "password
+// salah" sehingga email tidak bisa dienumerasi lewat selisih timing.
+const DUMMY_HASH = '$2b$12$WF.Q9mF7KFqX14AP6HJ7qeQ2DAK.1Dib0oiV9jjSArQS0.uMPBrES'
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: authSecret,
@@ -53,6 +58,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         if (!user) {
+          // Tetap jalankan bcrypt.compare terhadap hash dummy agar waktu respons
+          // sama seperti saat user ada tapi password salah (cegah enumerasi timing).
+          await bcrypt.compare(parsed.data.password, DUMMY_HASH)
           logger.warn({ email: parsed.data.email }, 'auth:user_not_found')
           return null
         }
