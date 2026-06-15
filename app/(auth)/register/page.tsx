@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
+import { rules } from '@/lib/rules'
 
 type Pill = { val: string; label: string }
 const TINGKAT: Pill[] = [
@@ -50,6 +51,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
 
+  const [agreed, setAgreed] = useState(false)
+  const [checked, setChecked] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [topError, setTopError] = useState<string | null>(null)
   const [errors, setErrors] = useState<{ [k: string]: string }>({})
@@ -129,6 +132,76 @@ export default function RegisterPage() {
             Login Sekarang
             <span className="tf-sweep" aria-hidden />
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Layar aturan lab (gerbang sebelum form) ─────────────────────────────
+  if (!agreed) {
+    return (
+      <div className="tf-card glass-card w-full max-w-sm p-8">
+        <style>{TF_STYLE}</style>
+        <span className="tf-scan" aria-hidden />
+        <span className="tf-br tf-br-tl" aria-hidden />
+        <span className="tf-br tf-br-br" aria-hidden />
+
+        <div className="relative" style={{ zIndex: 2 }}>
+          <h1 className="tf-head mb-1 text-2xl font-bold text-white">Aturan Lab</h1>
+          <p className="mb-5 text-sm text-neutral-400">
+            Baca dulu sebelum membuat akun. Dengan mendaftar kamu setuju mematuhi aturan berikut.
+          </p>
+
+          <ol className="mb-5 space-y-3">
+            {rules.map((r) => (
+              <li
+                key={r.n}
+                className="flex gap-3 rounded-xl border px-3.5 py-3"
+                style={{
+                  borderColor: `rgba(${r.rgb},0.28)`,
+                  background: `rgba(${r.rgb},0.06)`,
+                }}
+              >
+                <span
+                  className="tf-head mt-0.5 shrink-0 text-sm font-extrabold"
+                  style={{ color: r.hex }}
+                >
+                  {r.n}
+                </span>
+                <div>
+                  <div className="text-[13px] font-bold tracking-wide text-white">{r.title}</div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-neutral-400">{r.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <label className="mb-5 flex cursor-pointer items-start gap-2.5 text-sm text-neutral-300">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setChecked(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-blue-600"
+            />
+            <span>Saya sudah membaca dan menyetujui aturan lab di atas.</span>
+          </label>
+
+          <button
+            type="button"
+            disabled={!checked}
+            onClick={() => setAgreed(true)}
+            className="tf-btn tf-head w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 py-2.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Lanjut ke Pendaftaran
+            <span className="tf-sweep" aria-hidden />
+          </button>
+
+          <p className="mt-4 text-center text-sm text-neutral-500">
+            Sudah punya akun?{' '}
+            <Link href="/login" className="text-blue-400 hover:text-blue-300">
+              Masuk
+            </Link>
+          </p>
         </div>
       </div>
     )
