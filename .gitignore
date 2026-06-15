@@ -58,3 +58,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+demo-kelas.html
+demo-cari-user.html
+demo-lebar-admin.html
