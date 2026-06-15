@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { isSameOrigin } from '@/lib/csrf'
+import { profilUpdateSchema } from '@/lib/validations'
 
 function parseAnggota(value: string | null): string[] {
   if (!value) return []
@@ -35,15 +36,18 @@ export async function PATCH(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { kelompok, anggotaKelompok } = await req.json()
+    const parsed = profilUpdateSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
+    }
+    const { kelompok, anggotaKelompok } = parsed.data
+    const anggota = (anggotaKelompok ?? []).map((n) => n.trim()).filter(Boolean)
 
     const user = await prisma.user.update({
       where: { id: parseInt(session.user.id) },
       data: {
         kelompok: kelompok?.trim() || null,
-        anggotaKelompok: Array.isArray(anggotaKelompok) && anggotaKelompok.length > 0
-          ? JSON.stringify(anggotaKelompok.map((n: string) => n.trim()).filter(Boolean))
-          : null,
+        anggotaKelompok: anggota.length > 0 ? JSON.stringify(anggota) : null,
       },
       select: { id: true, kelompok: true, anggotaKelompok: true },
     })

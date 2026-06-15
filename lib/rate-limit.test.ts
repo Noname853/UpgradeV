@@ -43,14 +43,22 @@ describe('checkRateLimit', () => {
 })
 
 describe('clientIp', () => {
-  it('uses the first address from x-forwarded-for', () => {
-    const headers = new Headers({ 'x-forwarded-for': '203.0.113.1, 70.41.3.18' })
-    expect(clientIp(headers)).toBe('203.0.113.1')
+  it('prefers the trusted x-real-ip header over x-forwarded-for', () => {
+    const headers = new Headers({
+      'x-real-ip': '198.51.100.7',
+      'x-forwarded-for': '203.0.113.1, 70.41.3.18',
+    })
+    expect(clientIp(headers)).toBe('198.51.100.7')
   })
 
-  it('falls back to x-real-ip', () => {
+  it('uses x-real-ip when present', () => {
     const headers = new Headers({ 'x-real-ip': '198.51.100.7' })
     expect(clientIp(headers)).toBe('198.51.100.7')
+  })
+
+  it('falls back to the first x-forwarded-for address when x-real-ip is absent', () => {
+    const headers = new Headers({ 'x-forwarded-for': '203.0.113.1, 70.41.3.18' })
+    expect(clientIp(headers)).toBe('203.0.113.1')
   })
 
   it('returns "unknown" when no ip headers are present', () => {

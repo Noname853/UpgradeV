@@ -40,8 +40,10 @@ async function checkRedis(
   try {
     const count = (await redis.eval(luaIncr, [key], [windowMs])) as number
     return count <= limit
-  } catch {
+  } catch (err) {
     // Fail open to memory on Redis hiccups rather than locking everyone out.
+    // Log loudly so the degradation (weaker, per-instance limiting) is visible.
+    console.warn('[rate-limit] Redis error, falling back to in-memory limiter', err)
     return checkMemory(key, limit, windowMs)
   }
 }
@@ -67,6 +69,8 @@ function checkMemory(key: string, limit: number, windowMs: number): boolean {
   return true
 }
 
+let warnedNoRedis = false
+
 export async function checkRateLimit(
   key: string,
   limit: number,
@@ -74,11 +78,29 @@ export async function checkRateLimit(
 ): Promise<boolean> {
   const redis = await getRedis()
   if (redis) return checkRedis(redis, `rl:${key}`, limit, windowMs)
+
+  // Tanpa Redis, limiter hanya per-instance (lemah di serverless multi-instance).
+  // Peringatkan sekali di produksi agar konfigurasi yang hilang terlihat.
+  if (!warnedNoRedis && process.env.NODE_ENV === 'production') {
+    warnedNoRedis = true
+    console.warn('[rate-limit] UPSTASH_REDIS_* not configured; using in-memory limiter (per-instance only)')
+  }
   return checkMemory(key, limit, windowMs)
 }
 
+// Ambil IP klien untuk rate-limit.
+//
+// Diutamakan `x-real-ip`: di platform seperti Vercel header ini di-set oleh edge
+// yang tepercaya dan bernilai tunggal, jadi tidak bisa dipalsukan klien.
+// `x-forwarded-for` dipakai sebagai fallback (entri paling kiri = klien asli saat
+// di belakang proxy tepercaya). Jika app pernah diekspos tanpa proxy tepercaya,
+// kedua header ini bisa dipalsukan — pastikan selalu berada di belakang Vercel.
 export function clientIp(headers: Headers): string {
+  const realIp = headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+
   const xff = headers.get('x-forwarded-for')
   if (xff) return xff.split(',')[0].trim()
-  return headers.get('x-real-ip') ?? 'unknown'
+
+  return 'unknown'
 }

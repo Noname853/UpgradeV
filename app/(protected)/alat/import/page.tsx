@@ -63,7 +63,17 @@ async function importAction(formData: FormData) {
     redirect(`/alat/import?error=missing-columns&cols=${missing.join(',')}`)
   }
 
+  // Batasi jumlah baris agar file besar tidak memicu ribuan operasi DB (DoS).
+  const MAX_ROWS = 2000
   const totalRows = sheet.rowCount
+  if (totalRows - 1 > MAX_ROWS) {
+    redirect(`/alat/import?error=too-many-rows&max=${MAX_ROWS}`)
+  }
+
+  // Fase 1: baca & validasi semua baris di memori dulu.
+  type ParsedRow = { row: number; kode: string; nama: string; kategori: string; stok: number; lokasi: string; deskripsi: string | null }
+  const parsedRows: ParsedRow[] = []
+
   for (let i = 2; i <= totalRows; i++) {
     const row = sheet.getRow(i)
     const getCell = (key: string) => {
@@ -87,40 +97,55 @@ async function importAction(formData: FormData) {
 
     if (!kode || !nama || !kategori) {
       errors++
-      results.push({
-        row: i,
-        kode: kode || '(kosong)',
-        action: 'error',
-        message: 'Kode, nama, dan kategori wajib diisi',
-      })
+      results.push({ row: i, kode: kode || '(kosong)', action: 'error', message: 'Kode, nama, dan kategori wajib diisi' })
       continue
     }
 
     const stok = stokRaw ? parseInt(stokRaw, 10) : 0
     const stokValue = isNaN(stok) ? 0 : Math.max(0, stok)
+    parsedRows.push({ row: i, kode, nama, kategori, stok: stokValue, lokasi, deskripsi: deskripsi || null })
+  }
 
+  // Fase 2: satu query untuk tahu kode mana yang sudah ada (created vs updated),
+  // menggantikan satu findUnique per baris.
+  const existingKodes = new Set(
+    parsedRows.length > 0
+      ? (await prisma.alat.findMany({
+          where: { kode: { in: parsedRows.map((r) => r.kode) } },
+          select: { kode: true },
+        })).map((a) => a.kode)
+      : [],
+  )
+
+  // Fase 3: tulis dalam batch transaksi (chunk) agar tidak ribuan round-trip lepas.
+  const CHUNK = 50
+  for (let c = 0; c < parsedRows.length; c += CHUNK) {
+    const chunk = parsedRows.slice(c, c + CHUNK)
     try {
-      const existing = await prisma.alat.findUnique({ where: { kode } })
-      await prisma.alat.upsert({
-        where: { kode },
-        update: { nama, kategori, stok: stokValue, lokasi, deskripsi: deskripsi || null },
-        create: { kode, nama, kategori, stok: stokValue, lokasi, deskripsi: deskripsi || null },
-      })
-      if (existing) {
-        updated++
-        results.push({ row: i, kode, action: 'updated' })
-      } else {
-        created++
-        results.push({ row: i, kode, action: 'created' })
+      await prisma.$transaction(
+        chunk.map((r) =>
+          prisma.alat.upsert({
+            where: { kode: r.kode },
+            update: { nama: r.nama, kategori: r.kategori, stok: r.stok, lokasi: r.lokasi, deskripsi: r.deskripsi },
+            create: { kode: r.kode, nama: r.nama, kategori: r.kategori, stok: r.stok, lokasi: r.lokasi, deskripsi: r.deskripsi },
+          }),
+        ),
+      )
+      for (const r of chunk) {
+        if (existingKodes.has(r.kode)) {
+          updated++
+          results.push({ row: r.row, kode: r.kode, action: 'updated' })
+        } else {
+          created++
+          results.push({ row: r.row, kode: r.kode, action: 'created' })
+        }
       }
-    } catch (err) {
-      errors++
-      results.push({
-        row: i,
-        kode,
-        action: 'error',
-        message: err instanceof Error ? err.message : 'Gagal menyimpan',
-      })
+    } catch {
+      // Pesan generik — jangan bocorkan detail error DB ke admin.
+      for (const r of chunk) {
+        errors++
+        results.push({ row: r.row, kode: r.kode, action: 'error', message: 'Gagal menyimpan' })
+      }
     }
   }
 
@@ -136,7 +161,7 @@ async function importAction(formData: FormData) {
 export default async function ImportAlatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; cols?: string; created?: string; updated?: string; errors?: string; log?: string }>
+  searchParams: Promise<{ error?: string; cols?: string; max?: string; created?: string; updated?: string; errors?: string; log?: string }>
 }) {
   const session = await auth()
   if (session?.user.role !== 'admin') redirect('/dashboard')
@@ -162,7 +187,9 @@ export default async function ImportAlatPage({
             ? 'File Excel kosong'
             : sp.error === 'missing-columns'
               ? `Kolom wajib hilang: ${sp.cols ?? ''}`
-              : null
+              : sp.error === 'too-many-rows'
+                ? `Terlalu banyak baris. Maksimal ${sp.max ?? '2000'} baris per impor.`
+                : null
 
   return (
     <div className="pb-8">
@@ -193,7 +220,7 @@ export default async function ImportAlatPage({
                 className="hud-input block w-full cursor-pointer text-sm file:mr-4 file:cursor-pointer file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:brightness-110"
               />
               <p className="mt-2 text-xs" style={{ color: '#6b7785' }}>
-                Maksimal 1MB. Hanya format .xlsx yang didukung.
+                Maksimal 5 MB &amp; 2000 baris. Hanya format .xlsx yang didukung.
               </p>
             </div>
 

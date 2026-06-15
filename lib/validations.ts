@@ -78,3 +78,15 @@ export const userUpdateSchema = z
   })
   .partial()
   .strict()
+
+// ============================================================================
+// Skema profil (dipakai oleh /api/profil PATCH milik user sendiri)
+// Membatasi panjang nama kelompok dan jumlah/panjang anggota agar tidak bisa
+// menyimpan blob besar (storage/DoS).
+// ============================================================================
+export const profilUpdateSchema = z
+  .object({
+    kelompok: nullableStr(100).optional(),
+    anggotaKelompok: z.array(z.string().max(100)).max(50).optional(),
+  })
+  .strict()
