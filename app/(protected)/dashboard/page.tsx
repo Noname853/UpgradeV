@@ -68,7 +68,7 @@ export default async function DashboardPage() {
     ]
 
     return (
-      <div className="mx-auto max-w-[1120px]">
+      <div>
         <div className="mb-6 hud-rise">
           <h1 className="hud-title" style={{ fontSize: 26 }}>Dashboard</h1>
           <p className="mt-1.5 text-[15px]" style={{ color: '#8a97a3' }}>

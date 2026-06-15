@@ -17,7 +17,7 @@ export default async function EditAlatPage({ params }: { params: Promise<{ id: s
   if (!alat) notFound()
 
   return (
-    <div className="mx-auto max-w-[1120px] space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3 hud-rise">
         <Link
           href={`/alat/${id}`}

@@ -9,7 +9,7 @@ export default async function TambahUserPage() {
   if (session?.user.role !== 'admin') redirect('/dashboard')
 
   return (
-    <div className="mx-auto max-w-[1120px]">
+    <div>
       <div className="mb-5 flex items-center gap-3 hud-rise">
         <Link
           href="/users"

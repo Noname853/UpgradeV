@@ -67,7 +67,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   }
 
   return (
-    <div className="mx-auto max-w-[1120px]">
+    <div>
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3 hud-rise">
         <div>
           <h1 className="hud-title" style={{ fontSize: 24 }}>Manajemen User</h1>

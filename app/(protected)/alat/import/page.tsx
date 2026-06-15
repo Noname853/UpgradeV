@@ -165,7 +165,7 @@ export default async function ImportAlatPage({
               : null
 
   return (
-    <div className="mx-auto max-w-[1120px] pb-8">
+    <div className="pb-8">
       <div className="mb-5 flex items-center gap-3 hud-rise">
         <Link
           href="/alat"

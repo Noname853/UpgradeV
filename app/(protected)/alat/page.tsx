@@ -49,7 +49,7 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
 
   if (isAdmin) {
     return (
-      <div className="mx-auto max-w-[1120px]">
+      <div>
         {/* header */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 hud-rise">
           <div>
