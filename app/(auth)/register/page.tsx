@@ -66,7 +66,7 @@ export default function RegisterPage() {
     !!tingkat &&
     !!jurusan &&
     !!rombel &&
-    password.length >= 6 &&
+    password.length >= 8 &&
     !submitting
 
   async function onSubmit() {
@@ -74,7 +74,7 @@ export default function RegisterPage() {
     if (nama.trim().length < 2) next.nama = 'Nama minimal 2 karakter'
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) next.email = 'Email tidak valid'
     if (!tingkat || !jurusan || !rombel) next.kelas = 'Lengkapi pilihan kelas'
-    if (password.length < 6) next.password = 'Password minimal 6 karakter'
+    if (password.length < 8) next.password = 'Password minimal 8 karakter'
     setErrors(next)
     if (Object.keys(next).length) return
 
@@ -236,7 +236,7 @@ export default function RegisterPage() {
               type={showPass ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimal 6 karakter"
+              placeholder="Minimal 8 karakter"
               className="tf-input w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
             />
             {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}

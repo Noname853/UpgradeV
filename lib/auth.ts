@@ -76,13 +76,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: 'jwt' },
+  // Token kedaluwarsa 8 jam, diperbarui maksimal tiap 15 menit. Membatasi
+  // jendela waktu sebuah sesi tetap valid setelah akun diubah/dinonaktifkan.
+  session: { strategy: 'jwt', maxAge: 8 * 60 * 60, updateAge: 15 * 60 },
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
+      // Saat login: simpan identitas awal ke token.
       if (user) {
         token.id = user.id
         token.role = (user as { role?: string }).role
         token.kelas = (user as { kelas?: string | null }).kelas
+        return token
+      }
+
+      // Request berikutnya: validasi ulang ke DB agar perubahan role dan
+      // penonaktifan akun langsung berlaku (tidak menunggu token kedaluwarsa).
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: Number(token.id) },
+            select: { isActive: true, role: true, kelas: true, name: true },
+          })
+          // Akun hilang atau dinonaktifkan -> batalkan sesi.
+          if (!dbUser || !dbUser.isActive) return null
+          token.role = dbUser.role
+          token.kelas = dbUser.kelas ?? null
+          token.name = dbUser.name
+        } catch (err) {
+          // Gagal akses DB: pertahankan token lama agar gangguan DB sesaat
+          // tidak melogout semua orang (fail-open demi ketersediaan).
+          logger.error({ err }, 'auth:jwt revalidate failed')
+        }
       }
       return token
     },

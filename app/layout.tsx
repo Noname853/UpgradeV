@@ -25,6 +25,12 @@ const rajdhani = Rajdhani({
   weight: ['400', '500', '600', '700'],
 })
 
+// CSP berbasis nonce (lihat proxy.ts) menyuntik nonce per-request, jadi semua
+// halaman harus dirender dinamis agar script Next selalu membawa nonce yang cocok.
+// Halaman terproteksi sudah dinamis karena memakai auth(); ini mencakup sisanya
+// (landing, login, register) agar tidak ter-prerender statis tanpa nonce.
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Iventaris TKJ — Sistem Inventaris Sekolah',
   description: 'Sistem manajemen inventaris modern untuk laboratorium sekolah kejuruan',

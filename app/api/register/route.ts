@@ -5,10 +5,11 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
 const schema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(6),
-  kelas: z.string().optional(),
+  name: z.string().min(2).max(100),
+  email: z.string().email().max(200),
+  // bcrypt memotong input >72 byte; batasi panjang agar tidak ada bagian yang diam-diam diabaikan.
+  password: z.string().min(8).max(72),
+  kelas: z.string().max(50).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email sudah digunakan' }, { status: 400 })
     }
 
-    const hashed = await bcrypt.hash(password, 10)
+    const hashed = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
       data: { name, email, password: hashed, role: 'siswa', kelas: kelas ?? null },
     })

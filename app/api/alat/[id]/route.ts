@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { alatUpdateSchema } from '@/lib/validations'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -39,14 +40,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
 
   try {
-    const body = await req.json()
+    const parsed = alatUpdateSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
+    }
+
     const alat = await prisma.alat.update({
       where: { id: numId },
-      data: {
-        ...body,
-        tanggalEos: body.tanggalEos ? new Date(body.tanggalEos) : null,
-        tanggalEol: body.tanggalEol ? new Date(body.tanggalEol) : null,
-      },
+      data: parsed.data,
     })
     return NextResponse.json(alat)
   } catch (err) {

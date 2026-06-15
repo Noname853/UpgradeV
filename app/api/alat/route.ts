@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
+import { alatCreateSchema } from '@/lib/validations'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -55,12 +56,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
-    const body = await req.json()
-    const { kode, nama, kategori, stok, lokasi, deskripsi, foto, tanggalEos, tanggalEol, keteranganEos, keteranganEol } = body
-
-    if (!kode || !nama || !kategori) {
-      return NextResponse.json({ error: 'Kode, nama, dan kategori wajib diisi' }, { status: 400 })
+    const parsed = alatCreateSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
     }
+    const { kode, lokasi, ...rest } = parsed.data
 
     const existing = await prisma.alat.findUnique({ where: { kode } })
     if (existing) return NextResponse.json({ error: 'Kode alat sudah digunakan' }, { status: 400 })
@@ -68,16 +68,8 @@ export async function POST(req: NextRequest) {
     const alat = await prisma.alat.create({
       data: {
         kode,
-        nama,
-        kategori,
-        stok: stok ?? 0,
         lokasi: lokasi ?? '',
-        deskripsi: deskripsi ?? null,
-        foto: foto ?? null,
-        tanggalEos: tanggalEos ? new Date(tanggalEos) : null,
-        tanggalEol: tanggalEol ? new Date(tanggalEol) : null,
-        keteranganEos: keteranganEos ?? null,
-        keteranganEol: keteranganEol ?? null,
+        ...rest,
       },
     })
 

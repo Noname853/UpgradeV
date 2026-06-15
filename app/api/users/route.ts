@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) return NextResponse.json({ error: 'Email sudah digunakan' }, { status: 400 })
 
-    const hashed = await bcrypt.hash(password, 10)
+    const hashed = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
       data: { name, email, password: hashed, role: finalRole, kelas: kelas ?? null, kelompok: kelompok ?? null },
       select: { id: true, name: true, email: true, role: true, kelas: true },
