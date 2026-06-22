@@ -53,7 +53,7 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
   const labelStyle = { color: '#b3bdc7' }
 
   return (
-    <div className="hud-panel hud-rise max-w-2xl p-6">
+    <div className="hud-panel hud-rise w-full p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -71,7 +71,7 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
           <input name="nama" required defaultValue={initial?.nama as string} placeholder="Switch TP-Link 24 Port" className={inputClass} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label className={labelClass} style={labelStyle}>Stok</label>
             <input name="stok" type="number" min="0" defaultValue={initial?.stok as number ?? 0} className={inputClass} />
@@ -79,6 +79,20 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
           <div>
             <label className={labelClass} style={labelStyle}>Lokasi</label>
             <input name="lokasi" defaultValue={initial?.lokasi as string} placeholder="Lab Jaringan" className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass} style={labelStyle}>Foto Alat (URL)</label>
+            <input
+              name="foto"
+              type="url"
+              value={foto}
+              onChange={(e) => {
+                setFoto(e.target.value)
+                setFotoError(false)
+              }}
+              placeholder="https://contoh.com/foto-alat.jpg"
+              className={inputClass}
+            />
           </div>
         </div>
 
@@ -88,20 +102,8 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
         </div>
 
         <div>
-          <label className={labelClass} style={labelStyle}>Foto Alat (URL)</label>
-          <input
-            name="foto"
-            type="url"
-            value={foto}
-            onChange={(e) => {
-              setFoto(e.target.value)
-              setFotoError(false)
-            }}
-            placeholder="https://contoh.com/foto-alat.jpg"
-            className={inputClass}
-          />
-          <p className="mt-2 text-xs" style={{ color: '#6b7785' }}>
-            Tempel link gambar (jpg/png). Gambar akan tampil di halaman detail alat.
+          <p className="text-xs" style={{ color: '#6b7785' }}>
+            Tempel link gambar (jpg/png) di kolom Foto Alat di atas. Gambar akan tampil di halaman detail alat.
           </p>
           {foto.trim() && (
             <div className="mt-3">

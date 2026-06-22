@@ -64,9 +64,9 @@ export function UserForm({ initial }: UserFormProps) {
   const labelStyle = { color: '#b3bdc7' }
 
   return (
-    <div className="hud-panel hud-accent-top hud-rise mb-8 w-full max-w-[720px] p-[26px]">
+    <div className="hud-panel hud-accent-top hud-rise mb-8 w-full p-[26px]">
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid gap-[18px] sm:grid-cols-2">
+        <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label className={labelClass} style={labelStyle}>Nama Lengkap *</label>
             <input name="name" required defaultValue={initial?.name} className={inputClass} />
@@ -83,9 +83,9 @@ export function UserForm({ initial }: UserFormProps) {
           </div>
           <div>
             <label className={labelClass} style={labelStyle}>Role</label>
-            <select name="role" defaultValue={initial?.role ?? 'siswa'} className={inputClass} style={{ background: '#0e0f14' }}>
-              <option value="siswa">Siswa</option>
-              <option value="admin">Admin</option>
+            <select name="role" defaultValue={initial?.role ?? 'siswa'} className={inputClass} style={{ background: '#0e0f14', colorScheme: 'dark' }}>
+              <option value="siswa" style={{ background: '#0f1420', color: '#e8edf2' }}>Siswa</option>
+              <option value="admin" style={{ background: '#0f1420', color: '#e8edf2' }}>Admin</option>
             </select>
           </div>
           <div>
