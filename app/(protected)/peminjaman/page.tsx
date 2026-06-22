@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
-import { Plus, PackageCheck } from 'lucide-react'
+import { Plus, PackageCheck, Search, Archive, X } from 'lucide-react'
 import Link from 'next/link'
 
 const STATUS_TABS = [
@@ -13,27 +13,62 @@ const STATUS_TABS = [
   { label: 'Dibatalkan', value: 'dibatalkan' },
 ]
 
+const ARCHIVE_DAYS = 30
+
 interface SearchParams {
   status?: string
   page?: string
+  search?: string
+  kelas?: string
+}
+
+function buildQueryString(params: Record<string, string>) {
+  const filtered = Object.entries(params).filter(([, v]) => v)
+  return filtered.length ? `?${new URLSearchParams(filtered).toString()}` : ''
 }
 
 export default async function PeminjamanPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams
   const status = sp.status ?? ''
   const page = parseInt(sp.page ?? '1')
+  const search = sp.search ?? ''
+  const kelasFilter = sp.kelas ?? ''
   const limit = 10
 
   const session = await auth()
   const isAdmin = session?.user.role === 'admin'
   const userId = parseInt(session?.user.id ?? '0')
 
+  const archiveCutoff = new Date()
+  archiveCutoff.setDate(archiveCutoff.getDate() - ARCHIVE_DAYS)
+
+  const archiveCondition = {
+    OR: [
+      { status: 'dikembalikan', tanggalKembali: { lt: archiveCutoff } },
+      { status: 'dibatalkan', tanggalBatal: { lt: archiveCutoff } },
+    ],
+  }
+
+  const activeCondition = {
+    NOT: archiveCondition,
+  }
+
   const where = {
     ...(isAdmin ? {} : { userId }),
     ...(status ? { status } : {}),
+    ...(isAdmin ? activeCondition : {}),
+    ...(search
+      ? {
+          OR: [
+            { user: { name: { contains: search } } },
+            { details: { some: { alat: { nama: { contains: search } } } } },
+          ],
+        }
+      : {}),
+    ...(kelasFilter ? { user: { kelas: kelasFilter } } : {}),
   }
 
-  const [peminjamans, total] = await Promise.all([
+  const [peminjamans, total, archivedCount, kelasList, statusCounts] = await Promise.all([
     prisma.peminjaman.findMany({
       where,
       skip: (page - 1) * limit,
@@ -48,9 +83,48 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
       },
     }),
     prisma.peminjaman.count({ where }),
+    isAdmin
+      ? prisma.peminjaman.count({ where: archiveCondition })
+      : Promise.resolve(0),
+    isAdmin
+      ? prisma.user.findMany({
+          where: { role: 'siswa', isActive: true, kelas: { not: null } },
+          select: { kelas: true },
+          distinct: ['kelas'],
+          orderBy: { kelas: 'asc' },
+        })
+      : Promise.resolve([]),
+    isAdmin
+      ? Promise.all(
+          STATUS_TABS.filter((t) => t.value).map(async (tab) => ({
+            value: tab.value,
+            count: await prisma.peminjaman.count({
+              where: {
+                status: tab.value,
+                ...activeCondition,
+                ...(search
+                  ? {
+                      OR: [
+                        { user: { name: { contains: search } } },
+                        { details: { some: { alat: { nama: { contains: search } } } } },
+                      ],
+                    }
+                  : {}),
+                ...(kelasFilter ? { user: { kelas: kelasFilter } } : {}),
+              },
+            }),
+          }))
+        )
+      : Promise.resolve([]),
   ])
 
   const pages = Math.ceil(total / limit)
+  const countMap = Object.fromEntries(statusCounts.map((s) => [s.value, s.count]))
+  const distinctKelas = kelasList
+    .map((u) => u.kelas)
+    .filter((k): k is string => k !== null)
+
+  const hasFilters = search || kelasFilter
 
   if (isAdmin) {
     return (
@@ -58,8 +132,21 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3 hud-rise">
           <div>
             <h1 className="hud-title" style={{ fontSize: 24 }}>Peminjaman</h1>
-            <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>{total} peminjaman</p>
+            <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>
+              {total} peminjaman aktif
+              {archivedCount > 0 && ` · ${archivedCount.toLocaleString('id-ID')} di arsip`}
+            </p>
           </div>
+          {archivedCount > 0 && (
+            <Link
+              href="/peminjaman/arsip"
+              className="hud-clip-sm inline-flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition"
+              style={{ color: '#9bb3ff', border: '1px solid rgba(92,132,255,0.35)' }}
+            >
+              <Archive className="h-3.5 w-3.5" />
+              LIHAT ARSIP
+            </Link>
+          )}
         </div>
 
         {/* Status tabs */}
@@ -70,10 +157,11 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
           >
             {STATUS_TABS.map((tab) => {
               const active = status === tab.value
+              const count = tab.value ? countMap[tab.value] : total
               return (
                 <Link
                   key={tab.value}
-                  href={`/peminjaman${tab.value ? `?status=${tab.value}` : ''}`}
+                  href={`/peminjaman${buildQueryString({ status: tab.value, search, kelas: kelasFilter })}`}
                   className="whitespace-nowrap px-3 py-2 text-[13px] transition hud-clip-sm"
                   style={{
                     color: active ? '#fff' : '#6b7785',
@@ -82,11 +170,97 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
                   }}
                 >
                   {tab.label}
+                  {count !== undefined && (
+                    <span
+                      className="ml-1.5 inline-block rounded-full px-[6px] py-[1px] text-[11px]"
+                      style={{ background: 'rgba(92,132,255,0.18)', color: '#9bb3ff' }}
+                    >
+                      {count}
+                    </span>
+                  )}
                 </Link>
               )
             })}
           </div>
         </div>
+
+        {/* Filter bar */}
+        <form className="mb-[18px] flex flex-wrap items-center gap-2.5">
+          <div className="relative flex-1" style={{ minWidth: 220 }}>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#6b7785' }} />
+            <input
+              type="text"
+              name="search"
+              defaultValue={search}
+              placeholder="Cari nama siswa atau alat…"
+              className="hud-clip-sm w-full py-[9px] pl-9 pr-3 text-[13.5px] outline-none transition"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(99,102,241,0.28)',
+                color: '#e8edf2',
+              }}
+            />
+          </div>
+          <select
+            name="kelas"
+            defaultValue={kelasFilter}
+            className="hud-clip-sm py-[9px] px-3 text-[13.5px] outline-none"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(99,102,241,0.28)',
+              color: '#e8edf2',
+              minWidth: 160,
+            }}
+          >
+            <option value="">Semua Kelas</option>
+            {distinctKelas.map((k) => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+          {status && <input type="hidden" name="status" value={status} />}
+          <button
+            type="submit"
+            className="hud-clip-sm px-4 py-[9px] text-[12px] font-semibold transition"
+            style={{ background: 'rgba(92,132,255,0.14)', color: '#9bb3ff', border: '1px solid rgba(92,132,255,0.35)' }}
+          >
+            CARI
+          </button>
+          {hasFilters && (
+            <Link
+              href={`/peminjaman${status ? `?status=${status}` : ''}`}
+              className="hud-clip-sm inline-flex items-center gap-1 px-3 py-[9px] text-[12px] transition"
+              style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.16)' }}
+            >
+              <X className="h-3 w-3" />
+              Reset
+            </Link>
+          )}
+        </form>
+
+        {/* Active filter chips */}
+        {hasFilters && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="hud-label text-[10px]" style={{ color: '#6b7785', letterSpacing: '1.5px' }}>FILTER AKTIF:</span>
+            {kelasFilter && (
+              <Link
+                href={`/peminjaman${buildQueryString({ status, search, kelas: '' })}`}
+                className="hud-clip-sm inline-flex items-center gap-1 px-2.5 py-1 text-[12px]"
+                style={{ background: 'rgba(92,132,255,0.14)', color: '#fff', border: '1px solid rgba(92,132,255,0.45)' }}
+              >
+                Kelas: {kelasFilter} <X className="h-3 w-3" />
+              </Link>
+            )}
+            {search && (
+              <Link
+                href={`/peminjaman${buildQueryString({ status, search: '', kelas: kelasFilter })}`}
+                className="hud-clip-sm inline-flex items-center gap-1 px-2.5 py-1 text-[12px]"
+                style={{ background: 'rgba(92,132,255,0.14)', color: '#fff', border: '1px solid rgba(92,132,255,0.45)' }}
+              >
+                &ldquo;{search}&rdquo; <X className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Table */}
         <div className="hud-panel overflow-x-auto">
@@ -136,7 +310,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
           {peminjamans.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12" style={{ color: '#6b7785' }}>
               <PackageCheck className="mb-2 h-10 w-10" />
-              <p>Tidak ada peminjaman</p>
+              <p>{hasFilters ? 'Tidak ada peminjaman yang cocok dengan filter' : 'Tidak ada peminjaman'}</p>
             </div>
           )}
         </div>
@@ -148,7 +322,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
               return (
                 <Link
                   key={p}
-                  href={`/peminjaman?${new URLSearchParams({ ...(status && { status }), page: String(p) })}`}
+                  href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, page: String(p) })}`}
                   className="min-w-[40px] px-3 py-2 text-center text-[13px] hud-clip-sm"
                   style={
                     active
