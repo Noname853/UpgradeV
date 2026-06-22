@@ -128,11 +128,12 @@ export default async function ArsipPeminjamanPage({ searchParams }: { searchPara
             border: '1px solid rgba(99,102,241,0.28)',
             color: '#e8edf2',
             minWidth: 160,
+            colorScheme: 'dark',
           }}
         >
-          <option value="">Semua Kelas</option>
+          <option value="" style={{ background: '#0f1420', color: '#e8edf2' }}>Semua Kelas</option>
           {distinctKelas.map((k) => (
-            <option key={k} value={k}>{k}</option>
+            <option key={k} value={k} style={{ background: '#0f1420', color: '#e8edf2' }}>{k}</option>
           ))}
         </select>
         <button
