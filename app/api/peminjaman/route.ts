@@ -3,8 +3,36 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { isSameOrigin } from '@/lib/csrf'
+import { z } from 'zod'
 
-class StokError extends Error {}
+const AKTIF = ['menunggu_verifikasi', 'dipinjam']
+
+const peminjamanCreateSchema = z
+  .object({
+    keperluan: z.string().trim().min(1, 'Keperluan wajib diisi').max(500),
+    tanggalBatasKembali: z.preprocess(
+      (v) => (v === '' || v == null ? null : v),
+      z.coerce.date().nullable(),
+    ),
+    catatan: z.preprocess((v) => (v === '' || v == null ? null : v), z.string().max(1000).nullable()),
+    items: z
+      .array(
+        z
+          .object({
+            unitIds: z.array(z.coerce.number().int().positive()).min(1).max(50),
+            keterangan: z.preprocess(
+              (v) => (v === '' || v == null ? null : v),
+              z.string().max(500).nullable(),
+            ),
+          })
+          .strict(),
+      )
+      .min(1, 'Pilih minimal 1 alat')
+      .max(20),
+  })
+  .strict()
+
+class UnitError extends Error {}
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -32,7 +60,15 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { id: true, name: true, email: true, kelas: true } },
         details: {
-          include: { alat: { select: { id: true, nama: true, kode: true, kategori: true } } },
+          include: {
+            unit: {
+              select: {
+                id: true,
+                kode: true,
+                alat: { select: { id: true, nama: true, kategori: true } },
+              },
+            },
+          },
         },
       },
     }),
@@ -51,8 +87,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json()
-    const { keperluan, tanggalBatasKembali, catatan, items } = body
+    const parsed = peminjamanCreateSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
+    }
+    const { keperluan, tanggalBatasKembali, catatan, items } = parsed.data
     const userId = parseInt(session.user.id)
 
     if (!Number.isFinite(userId) || userId <= 0) {
@@ -64,62 +103,64 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Akun tidak ditemukan, silakan login ulang' }, { status: 401 })
     }
 
-    if (!keperluan || !items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Keperluan dan items wajib diisi' }, { status: 400 })
+    // Flatten + dedupe semua unit yang diminta.
+    const allUnitIds = Array.from(new Set(items.flatMap((it) => it.unitIds)))
+    if (allUnitIds.length === 0) {
+      return NextResponse.json({ error: 'Pilih minimal 1 unit' }, { status: 400 })
     }
 
-    for (const item of items) {
-      if (!item.alatId || typeof item.alatId !== 'number' || item.alatId <= 0) {
-        return NextResponse.json({ error: 'Alat belum dipilih' }, { status: 400 })
-      }
-      if (!item.jumlah || item.jumlah < 1) {
-        return NextResponse.json({ error: 'Jumlah harus minimal 1' }, { status: 400 })
+    // Map unitId -> keterangan & ke alatId (untuk validasi 1 unit cuma 1 alat).
+    const unitKeteranganMap = new Map<number, string | null>()
+    for (const it of items) {
+      for (const uid of it.unitIds) {
+        unitKeteranganMap.set(uid, it.keterangan ?? null)
       }
     }
 
-    const totalItems = items.reduce((sum: number, i: { jumlah: number }) => sum + i.jumlah, 0)
-
-    // Stock check and create run in one transaction so concurrent requests
-    // cannot both pass the availability check and oversell the same alat.
+    // Cek dan create dalam 1 transaksi — cegah race condition (2 siswa pilih unit sama).
     const peminjaman = await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        const alat = await tx.alat.findUnique({
-          where: { id: item.alatId },
-          include: {
-            peminjamanDetails: {
-              where: { peminjaman: { status: { in: ['menunggu_verifikasi', 'dipinjam'] } } },
-              select: { jumlah: true },
-            },
+      const units = await tx.unit.findMany({
+        where: { id: { in: allUnitIds } },
+        include: {
+          alat: { select: { id: true, nama: true } },
+          peminjamanDetails: {
+            where: { peminjaman: { status: { in: AKTIF } } },
+            select: { id: true },
           },
-        })
-        if (!alat) throw new StokError(`Alat ID ${item.alatId} tidak ditemukan`)
+        },
+      })
 
-        const dipinjam = alat.peminjamanDetails.reduce((sum, d) => sum + d.jumlah, 0)
-        const stokTersedia = alat.stok - dipinjam
-        if (stokTersedia < item.jumlah) {
-          throw new StokError(`Stok ${alat.nama} tidak mencukupi (tersedia: ${stokTersedia})`)
+      if (units.length !== allUnitIds.length) {
+        throw new UnitError('Sebagian unit tidak ditemukan')
+      }
+
+      for (const u of units) {
+        if (u.kondisi !== 'baik') {
+          throw new UnitError(`Unit ${u.kode} (${u.alat.nama}) sedang rusak, tidak bisa dipinjam`)
+        }
+        if (u.peminjamanDetails.length > 0) {
+          throw new UnitError(`Unit ${u.kode} (${u.alat.nama}) sedang dipinjam, silakan pilih unit lain`)
         }
       }
 
       return tx.peminjaman.create({
         data: {
           userId,
-          totalItems,
+          totalItems: allUnitIds.length,
           keperluan,
           catatan: catatan ?? null,
           tanggalPinjam: new Date(),
-          tanggalBatasKembali: tanggalBatasKembali ? new Date(tanggalBatasKembali) : null,
+          tanggalBatasKembali: tanggalBatasKembali ?? null,
           status: 'menunggu_verifikasi',
           details: {
-            create: items.map((item: { alatId: number; jumlah: number; keterangan?: string }) => ({
-              alatId: item.alatId,
-              jumlah: item.jumlah,
-              keterangan: item.keterangan ?? null,
+            create: allUnitIds.map((uid) => ({
+              unitId: uid,
+              keterangan: unitKeteranganMap.get(uid) ?? null,
             })),
           },
         },
         include: {
-          details: { include: { alat: true } },
+          details: { include: { unit: { include: { alat: true } } } },
           user: { select: { id: true, name: true } },
         },
       })
@@ -127,7 +168,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(peminjaman, { status: 201 })
   } catch (err) {
-    if (err instanceof StokError) {
+    if (err instanceof UnitError) {
       return NextResponse.json({ error: err.message }, { status: 400 })
     }
     logger.error({ err }, '[POST /api/peminjaman]')

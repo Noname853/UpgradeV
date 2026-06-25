@@ -21,7 +21,16 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
     include: {
       user: { select: { id: true, name: true, email: true, kelas: true } },
       details: {
-        include: { alat: { select: { id: true, nama: true, kode: true, kategori: true } } },
+        include: {
+          unit: {
+            select: {
+              id: true,
+              kode: true,
+              kondisi: true,
+              alat: { select: { id: true, nama: true, kategori: true } },
+            },
+          },
+        },
       },
     },
   })
@@ -68,12 +77,20 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
                     style={{ background: 'rgba(255,255,255,0.02)' }}
                   >
                     <div>
-                      <Link href={`/alat/${d.alat.id}`} className="text-[14px] font-semibold" style={{ color: '#e8edf2' }}>
-                        {d.alat.nama}
+                      <Link href={`/alat/${d.unit.alat.id}`} className="text-[14px] font-semibold" style={{ color: '#e8edf2' }}>
+                        {d.unit.alat.nama}
                       </Link>
-                      <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{d.alat.kode} · {d.alat.kategori}</p>
+                      <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{d.unit.alat.kategori}</p>
+                      {d.keterangan && (
+                        <p className="mt-1 text-[12px]" style={{ color: '#8a97a3' }}>Keterangan: {d.keterangan}</p>
+                      )}
                     </div>
-                    <span className="text-[13px]" style={{ color: '#c3ccd6' }}>{d.jumlah} unit</span>
+                    <span
+                      className="hud-clip-sm px-2.5 py-1 text-[12px] font-bold"
+                      style={{ fontFamily: 'var(--font-orbitron), sans-serif', color: '#4ade80', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)' }}
+                    >
+                      {d.unit.kode}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -201,19 +218,19 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`/alat/${d.alat.id}`}
+                      href={`/alat/${d.unit.alat.id}`}
                       className="text-[14.5px] font-semibold"
                       style={{ color: '#e8edf2' }}
                     >
-                      {d.alat.nama}
+                      {d.unit.alat.nama}
                     </Link>
-                    <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{d.alat.kode} · {d.alat.kategori}</p>
+                    <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{d.unit.alat.kategori}</p>
                   </div>
                   <span
-                    className="shrink-0 text-[13px] font-bold"
-                    style={{ fontFamily: 'var(--font-orbitron), sans-serif', color: '#5c84ff' }}
+                    className="hud-clip-sm shrink-0 px-2.5 py-1 text-[12px] font-bold"
+                    style={{ fontFamily: 'var(--font-orbitron), sans-serif', color: '#4ade80', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)' }}
                   >
-                    ×{d.jumlah}
+                    {d.unit.kode}
                   </span>
                 </div>
               ))}

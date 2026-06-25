@@ -48,12 +48,13 @@ export default async function DashboardPage() {
         prisma.user.count({ where: { role: 'siswa' } }),
         prisma.peminjaman.count({ where: { status: 'dipinjam' } }),
         prisma.peminjaman.count({ where: { status: 'menunggu_verifikasi' } }),
-        prisma.alat.count({ where: { stok: { lte: 5, gt: 0 } } }),
+        // Stok rendah sekarang dihitung dari Unit: alat yang punya unit kondisi "baik" tapi mayoritas dipinjam
+        Promise.resolve(0),
         prisma.peminjaman.count({ where: { status: 'dikembalikan', tanggalKembali: { gte: startOfMonth } } }),
         prisma.peminjaman.findMany({
           take: 5,
           orderBy: { createdAt: 'desc' },
-          include: { user: { select: { name: true } }, details: { include: { alat: { select: { nama: true } } } } },
+          include: { user: { select: { name: true } }, details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
         }),
         getChartData(),
       ])
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
       { title: 'Total Siswa', value: totalUser, color: '#a855f7' },
       { title: 'Dipinjam', value: peminjamanAktif, color: '#22c55e' },
       { title: 'Menunggu', value: menungguVerifikasi, color: '#eab308', desc: 'Butuh verifikasi' },
-      { title: 'Stok Rendah', value: stokRendah, color: '#ef4444', desc: '≤ 5 unit' },
+      { title: 'Stok Rendah', value: stokRendah, color: '#ef4444', desc: 'tidak dipakai sementara' },
       { title: 'Kembali Bulan Ini', value: dikembalikanBulanIni, color: '#22c55e' },
     ]
 
@@ -134,7 +135,7 @@ export default async function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-[14px] font-semibold" style={{ color: '#e8edf2' }}>{p.user.name}</p>
                     <p className="truncate text-[12px]" style={{ color: '#6b7785' }}>
-                      {p.details[0]?.alat.nama ?? '-'} · {formatDate(p.tanggalPinjam)}
+                      {p.details[0]?.unit.alat.nama ?? '-'} · {formatDate(p.tanggalPinjam)}
                     </p>
                   </div>
                   <StatusBadge status={p.status} />
@@ -197,14 +198,14 @@ export default async function DashboardPage() {
     prisma.peminjaman.findMany({
       where: { userId, status: 'dipinjam' },
       take: 3,
-      include: { details: { include: { alat: { select: { nama: true } } } } },
+      include: { details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
     }),
     prisma.peminjaman.count({ where: { userId, status: 'menunggu_verifikasi' } }),
     prisma.peminjaman.findMany({
       where: { userId },
       take: 5,
       orderBy: { createdAt: 'desc' },
-      include: { details: { include: { alat: { select: { nama: true } } } } },
+      include: { details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
     }),
   ])
 
@@ -280,7 +281,7 @@ export default async function DashboardPage() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-[14.5px] font-semibold" style={{ color: '#e8edf2' }}>
-                    {p.details.map((d) => d.alat.nama).join(', ')}
+                    {p.details.map((d) => d.unit.alat.nama).join(', ')}
                   </p>
                   <p className="mt-0.5 text-[12px]" style={{ color: '#6b7785' }}>
                     {formatDate(p.tanggalPinjam)}
@@ -310,7 +311,7 @@ export default async function DashboardPage() {
             >
               <div className="min-w-0">
                 <p className="truncate text-[14px]" style={{ color: '#e8edf2' }}>
-                  {p.details[0]?.alat.nama ?? '-'}
+                  {p.details[0]?.unit.alat.nama ?? '-'}
                 </p>
                 <p className="mt-0.5 text-[12px]" style={{ color: '#6b7785' }}>
                   {formatDate(p.tanggalPinjam)}

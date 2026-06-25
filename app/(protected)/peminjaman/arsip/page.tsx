@@ -43,7 +43,7 @@ export default async function ArsipPeminjamanPage({ searchParams }: { searchPara
             {
               OR: [
                 { user: { name: { contains: search } } },
-                { details: { some: { alat: { nama: { contains: search } } } } },
+                { details: { some: { unit: { alat: { nama: { contains: search } } } } } },
               ],
             },
           ],
@@ -62,7 +62,7 @@ export default async function ArsipPeminjamanPage({ searchParams }: { searchPara
         user: { select: { name: true, kelas: true, isActive: true } },
         details: {
           take: 2,
-          include: { alat: { select: { nama: true } } },
+          include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } },
         },
       },
     }),
@@ -217,7 +217,7 @@ export default async function ArsipPeminjamanPage({ searchParams }: { searchPara
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-[13.5px] line-clamp-1" style={{ color: '#c3ccd6' }}>
-                      {p.details.map((d) => d.alat.nama).join(', ')}
+                      {p.details.map((d) => d.unit.alat.nama).join(', ')}
                       {p.totalItems > p.details.length && ` +${p.totalItems - p.details.length} lainnya`}
                     </p>
                     <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{p.totalItems} item</p>

@@ -31,7 +31,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
     include: {
       user: { select: { name: true, kelas: true } },
       details: {
-        include: { alat: { select: { nama: true, kode: true } } },
+        include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } },
       },
     },
     take: 100,
@@ -148,7 +148,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
                     <p className="text-xs" style={{ color: '#6b7785' }}>{p.user.kelas ?? '-'}</p>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3" style={{ color: '#c3ccd6' }}>
-                    {p.details.map((d) => d.alat.nama).join(', ')}
+                    {p.details.map((d) => `${d.unit.alat.nama} (${d.unit.kode})`).join(', ')}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3" style={{ color: '#8a97a3' }}>{formatDate(p.tanggalPinjam)}</td>
                   <td className="whitespace-nowrap px-4 py-3" style={{ color: '#8a97a3' }}>{formatDate(p.tanggalKembali)}</td>

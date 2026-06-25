@@ -16,7 +16,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     include: {
       user: { select: { id: true, name: true, email: true, kelas: true } },
       details: {
-        include: { alat: { select: { id: true, nama: true, kode: true, kategori: true } } },
+        include: {
+          unit: {
+            select: {
+              id: true,
+              kode: true,
+              kondisi: true,
+              alat: { select: { id: true, nama: true, kategori: true } },
+            },
+          },
+        },
       },
     },
   })

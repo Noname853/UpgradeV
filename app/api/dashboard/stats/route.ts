@@ -19,7 +19,7 @@ export async function GET() {
         prisma.user.count({ where: { role: 'siswa' } }),
         prisma.peminjaman.count({ where: { status: 'dipinjam' } }),
         prisma.peminjaman.count({ where: { status: 'menunggu_verifikasi' } }),
-        prisma.alat.count({ where: { stok: { lte: 5, gt: 0 } } }),
+        Promise.resolve(0), // stok rendah dihapus sementara di sistem unit
         prisma.peminjaman.count({
           where: { status: 'dikembalikan', tanggalKembali: { gte: startOfMonth } },
         }),

@@ -17,10 +17,8 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
     const formData = new FormData(e.currentTarget)
 
     const body: Record<string, unknown> = {
-      kode: formData.get('kode'),
       nama: formData.get('nama'),
       kategori: formData.get('kategori'),
-      stok: parseInt(formData.get('stok') as string) || 0,
       lokasi: formData.get('lokasi'),
       deskripsi: formData.get('deskripsi') || null,
       foto: foto.trim() || null,
@@ -57,25 +55,16 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass} style={labelStyle}>Kode Alat *</label>
-            <input name="kode" required defaultValue={initial?.kode as string} placeholder="JRN001" className={inputClass} />
+            <label className={labelClass} style={labelStyle}>Nama Alat *</label>
+            <input name="nama" required defaultValue={initial?.nama as string} placeholder="Switch TP-Link 24 Port" className={inputClass} />
           </div>
           <div>
             <label className={labelClass} style={labelStyle}>Kategori *</label>
-            <input name="kategori" required defaultValue={initial?.kategori as string} placeholder="Jaringan" className={inputClass} />
+            <input name="kategori" required defaultValue={initial?.kategori as string} placeholder="Networking" className={inputClass} />
           </div>
         </div>
 
-        <div>
-          <label className={labelClass} style={labelStyle}>Nama Alat *</label>
-          <input name="nama" required defaultValue={initial?.nama as string} placeholder="Switch TP-Link 24 Port" className={inputClass} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <label className={labelClass} style={labelStyle}>Stok</label>
-            <input name="stok" type="number" min="0" defaultValue={initial?.stok as number ?? 0} className={inputClass} />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} style={labelStyle}>Lokasi</label>
             <input name="lokasi" defaultValue={initial?.lokasi as string} placeholder="Lab Jaringan" className={inputClass} />
@@ -101,32 +90,31 @@ export function AlatForm({ initial }: { initial?: Record<string, unknown> }) {
           <textarea name="deskripsi" rows={3} defaultValue={initial?.deskripsi as string} placeholder="Keterangan alat..." className={inputClass} style={{ resize: 'vertical' }} />
         </div>
 
-        <div>
-          <p className="text-xs" style={{ color: '#6b7785' }}>
-            Tempel link gambar (jpg/png) di kolom Foto Alat di atas. Gambar akan tampil di halaman detail alat.
-          </p>
-          {foto.trim() && (
-            <div className="mt-3">
-              {fotoError ? (
-                <p
-                  className="hud-clip-sm px-3 py-2 text-xs"
-                  style={{ color: '#eab308', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.28)' }}
-                >
-                  Gambar gagal dimuat. Periksa kembali URL-nya.
-                </p>
-              ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={foto.trim()}
-                  alt="Pratinjau foto alat"
-                  onError={() => setFotoError(true)}
-                  className="hud-clip-md max-h-72 w-full object-contain"
-                  style={{ border: '1px solid rgba(99,102,241,0.16)', background: 'rgba(255,255,255,0.02)' }}
-                />
-              )}
-            </div>
-          )}
-        </div>
+        <p className="text-xs" style={{ color: '#6b7785' }}>
+          Stok dihitung otomatis dari jumlah unit fisik. Tambah unit di halaman detail alat setelah jenis alat ini dibuat.
+        </p>
+
+        {foto.trim() && (
+          <div>
+            {fotoError ? (
+              <p
+                className="hud-clip-sm px-3 py-2 text-xs"
+                style={{ color: '#eab308', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.28)' }}
+              >
+                Gambar gagal dimuat. Periksa kembali URL-nya.
+              </p>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={foto.trim()}
+                alt="Pratinjau foto alat"
+                onError={() => setFotoError(true)}
+                className="hud-clip-md max-h-72 w-full object-contain"
+                style={{ border: '1px solid rgba(99,102,241,0.16)', background: 'rgba(255,255,255,0.02)' }}
+              />
+            )}
+          </div>
+        )}
 
         <div style={{ borderTop: '1px solid rgba(99,102,241,0.12)', paddingTop: 16 }}>
           <p className="hud-label mb-3 text-[10px]" style={{ color: '#6b7785', letterSpacing: 2 }}>EOS / EOL (Opsional)</p>

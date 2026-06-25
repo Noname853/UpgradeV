@@ -6,8 +6,9 @@ import Link from 'next/link'
 import ExcelJS from 'exceljs'
 
 interface RowResult {
+  sheet: 'Alat' | 'Unit'
   row: number
-  kode: string
+  ref: string
   action: 'created' | 'updated' | 'error'
   message?: string
 }
@@ -20,7 +21,7 @@ async function importAction(formData: FormData) {
   const file = formData.get('file') as File | null
   if (!file || file.size === 0) redirect('/alat/import?error=no-file')
 
-  const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 // 5 MB
+  const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
   if (file.size > MAX_UPLOAD_BYTES) redirect('/alat/import?error=too-large')
 
   const ALLOWED_MIME = [
@@ -29,131 +30,198 @@ async function importAction(formData: FormData) {
   ]
   if (!ALLOWED_MIME.includes(file.type)) redirect('/alat/import?error=invalid-file')
 
-  // Also guard by extension in case the browser sends a wrong MIME type
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (ext !== 'xlsx' && ext !== 'xls') redirect('/alat/import?error=invalid-file')
 
   const arrayBuffer = await file.arrayBuffer()
   const workbook = new ExcelJS.Workbook()
-
   try {
     await workbook.xlsx.load(arrayBuffer as ExcelJS.Buffer)
   } catch {
     redirect('/alat/import?error=invalid-file')
   }
 
-  const sheet = workbook.worksheets[0]
-  if (!sheet) redirect('/alat/import?error=empty')
+  const alatSheet = workbook.getWorksheet('Alat')
+  const unitSheet = workbook.getWorksheet('Unit')
 
-  const results: RowResult[] = []
-  let created = 0
-  let updated = 0
-  let errors = 0
-
-  const headerRow = sheet.getRow(1)
-  const colMap: Record<string, number> = {}
-  headerRow.eachCell((cell, colNumber) => {
-    const key = String(cell.value ?? '').trim().toLowerCase()
-    if (key) colMap[key] = colNumber
-  })
-
-  const required = ['kode', 'nama', 'kategori']
-  const missing = required.filter((k) => !colMap[k])
-  if (missing.length > 0) {
-    redirect(`/alat/import?error=missing-columns&cols=${missing.join(',')}`)
+  if (!alatSheet && !unitSheet) {
+    redirect('/alat/import?error=no-sheet')
   }
 
-  // Batasi jumlah baris agar file besar tidak memicu ribuan operasi DB (DoS).
   const MAX_ROWS = 2000
-  const totalRows = sheet.rowCount
-  if (totalRows - 1 > MAX_ROWS) {
-    redirect(`/alat/import?error=too-many-rows&max=${MAX_ROWS}`)
+  const results: RowResult[] = []
+  let alatCreated = 0, alatUpdated = 0, unitCreated = 0, errors = 0
+
+  const buildColMap = (sheet: ExcelJS.Worksheet) => {
+    const colMap: Record<string, number> = {}
+    sheet.getRow(1).eachCell((cell, colNumber) => {
+      const key = String(cell.value ?? '').trim().toLowerCase()
+      if (key) colMap[key] = colNumber
+    })
+    return colMap
   }
 
-  // Fase 1: baca & validasi semua baris di memori dulu.
-  type ParsedRow = { row: number; kode: string; nama: string; kategori: string; stok: number; lokasi: string; deskripsi: string | null }
-  const parsedRows: ParsedRow[] = []
-
-  for (let i = 2; i <= totalRows; i++) {
-    const row = sheet.getRow(i)
-    const getCell = (key: string) => {
-      const col = colMap[key]
-      if (!col) return ''
-      const v = row.getCell(col).value
-      if (v === null || v === undefined) return ''
-      if (typeof v === 'object' && 'text' in (v as object)) return String((v as { text: string }).text)
-      if (typeof v === 'object' && 'result' in (v as object)) return String((v as { result: unknown }).result)
-      return String(v)
-    }
-
-    const kode = getCell('kode').trim()
-    const nama = getCell('nama').trim()
-    const kategori = getCell('kategori').trim()
-    const stokRaw = getCell('stok').trim()
-    const lokasi = getCell('lokasi').trim()
-    const deskripsi = getCell('deskripsi').trim()
-
-    if (!kode && !nama && !kategori) continue
-
-    if (!kode || !nama || !kategori) {
-      errors++
-      results.push({ row: i, kode: kode || '(kosong)', action: 'error', message: 'Kode, nama, dan kategori wajib diisi' })
-      continue
-    }
-
-    const stok = stokRaw ? parseInt(stokRaw, 10) : 0
-    const stokValue = isNaN(stok) ? 0 : Math.max(0, stok)
-    parsedRows.push({ row: i, kode, nama, kategori, stok: stokValue, lokasi, deskripsi: deskripsi || null })
+  const getCell = (row: ExcelJS.Row, colMap: Record<string, number>, key: string): string => {
+    const col = colMap[key]
+    if (!col) return ''
+    const v = row.getCell(col).value
+    if (v === null || v === undefined) return ''
+    if (typeof v === 'object' && 'text' in (v as object)) return String((v as { text: string }).text)
+    if (typeof v === 'object' && 'result' in (v as object)) return String((v as { result: unknown }).result)
+    return String(v)
   }
 
-  // Fase 2: satu query untuk tahu kode mana yang sudah ada (created vs updated),
-  // menggantikan satu findUnique per baris.
-  const existingKodes = new Set(
-    parsedRows.length > 0
-      ? (await prisma.alat.findMany({
-          where: { kode: { in: parsedRows.map((r) => r.kode) } },
-          select: { kode: true },
-        })).map((a) => a.kode)
-      : [],
-  )
+  // ── Fase 1: Import Alat (jenis) ─────────────────────────────────────────
+  if (alatSheet) {
+    const colMap = buildColMap(alatSheet)
+    if (!colMap['nama'] || !colMap['kategori']) {
+      redirect('/alat/import?error=missing-alat-cols')
+    }
+    const total = alatSheet.rowCount
+    if (total - 1 > MAX_ROWS) redirect(`/alat/import?error=too-many-rows&max=${MAX_ROWS}`)
 
-  // Fase 3: tulis dalam batch transaksi (chunk) agar tidak ribuan round-trip lepas.
-  const CHUNK = 50
-  for (let c = 0; c < parsedRows.length; c += CHUNK) {
-    const chunk = parsedRows.slice(c, c + CHUNK)
-    try {
-      await prisma.$transaction(
-        chunk.map((r) =>
-          prisma.alat.upsert({
-            where: { kode: r.kode },
-            update: { nama: r.nama, kategori: r.kategori, stok: r.stok, lokasi: r.lokasi, deskripsi: r.deskripsi },
-            create: { kode: r.kode, nama: r.nama, kategori: r.kategori, stok: r.stok, lokasi: r.lokasi, deskripsi: r.deskripsi },
-          }),
-        ),
+    type ParsedAlat = { row: number; nama: string; kategori: string; lokasi: string; deskripsi: string | null }
+    const parsed: ParsedAlat[] = []
+
+    for (let i = 2; i <= total; i++) {
+      const row = alatSheet.getRow(i)
+      const nama = getCell(row, colMap, 'nama').trim()
+      const kategori = getCell(row, colMap, 'kategori').trim()
+      const lokasi = getCell(row, colMap, 'lokasi').trim()
+      const deskripsi = getCell(row, colMap, 'deskripsi').trim()
+      if (!nama && !kategori) continue
+      if (!nama || !kategori) {
+        errors++
+        results.push({ sheet: 'Alat', row: i, ref: nama || '(kosong)', action: 'error', message: 'Nama dan kategori wajib diisi' })
+        continue
+      }
+      parsed.push({ row: i, nama, kategori, lokasi, deskripsi: deskripsi || null })
+    }
+
+    if (parsed.length > 0) {
+      const existing = new Set(
+        (await prisma.alat.findMany({
+          where: { nama: { in: parsed.map((p) => p.nama) } },
+          select: { nama: true },
+        })).map((a) => a.nama),
       )
-      for (const r of chunk) {
-        if (existingKodes.has(r.kode)) {
-          updated++
-          results.push({ row: r.row, kode: r.kode, action: 'updated' })
-        } else {
-          created++
-          results.push({ row: r.row, kode: r.kode, action: 'created' })
+
+      const CHUNK = 50
+      for (let c = 0; c < parsed.length; c += CHUNK) {
+        const chunk = parsed.slice(c, c + CHUNK)
+        try {
+          await prisma.$transaction(
+            chunk.map((p) =>
+              prisma.alat.upsert({
+                where: { nama: p.nama },
+                update: { kategori: p.kategori, lokasi: p.lokasi, deskripsi: p.deskripsi },
+                create: { nama: p.nama, kategori: p.kategori, lokasi: p.lokasi, deskripsi: p.deskripsi },
+              }),
+            ),
+          )
+          for (const p of chunk) {
+            if (existing.has(p.nama)) {
+              alatUpdated++
+              results.push({ sheet: 'Alat', row: p.row, ref: p.nama, action: 'updated' })
+            } else {
+              alatCreated++
+              results.push({ sheet: 'Alat', row: p.row, ref: p.nama, action: 'created' })
+            }
+          }
+        } catch {
+          for (const p of chunk) {
+            errors++
+            results.push({ sheet: 'Alat', row: p.row, ref: p.nama, action: 'error', message: 'Gagal menyimpan' })
+          }
         }
       }
-    } catch {
-      // Pesan generik — jangan bocorkan detail error DB ke admin.
-      for (const r of chunk) {
+    }
+  }
+
+  // ── Fase 2: Import Unit (fisik per alat) ────────────────────────────────
+  if (unitSheet) {
+    const colMap = buildColMap(unitSheet)
+    if (!colMap['kode'] || !colMap['nama_alat']) {
+      redirect('/alat/import?error=missing-unit-cols')
+    }
+    const total = unitSheet.rowCount
+    if (total - 1 > MAX_ROWS) redirect(`/alat/import?error=too-many-rows&max=${MAX_ROWS}`)
+
+    type ParsedUnit = { row: number; kode: string; namaAlat: string; kondisi: 'baik' | 'rusak'; catatan: string | null }
+    const parsed: ParsedUnit[] = []
+
+    for (let i = 2; i <= total; i++) {
+      const row = unitSheet.getRow(i)
+      const kode = getCell(row, colMap, 'kode').trim()
+      const namaAlat = getCell(row, colMap, 'nama_alat').trim()
+      const kondisiRaw = getCell(row, colMap, 'kondisi').trim().toLowerCase()
+      const catatan = getCell(row, colMap, 'catatan').trim()
+      if (!kode && !namaAlat) continue
+      if (!kode || !namaAlat) {
         errors++
-        results.push({ row: r.row, kode: r.kode, action: 'error', message: 'Gagal menyimpan' })
+        results.push({ sheet: 'Unit', row: i, ref: kode || '(kosong)', action: 'error', message: 'Kode dan nama_alat wajib diisi' })
+        continue
+      }
+      const kondisi: 'baik' | 'rusak' = kondisiRaw === 'rusak' ? 'rusak' : 'baik'
+      parsed.push({ row: i, kode, namaAlat, kondisi, catatan: catatan || null })
+    }
+
+    if (parsed.length > 0) {
+      // Lookup semua nama_alat sekaligus
+      const namaUnique = Array.from(new Set(parsed.map((p) => p.namaAlat)))
+      const alatRecords = await prisma.alat.findMany({
+        where: { nama: { in: namaUnique } },
+        select: { id: true, nama: true },
+      })
+      const alatMap = new Map(alatRecords.map((a) => [a.nama, a.id]))
+
+      const existingUnits = new Set(
+        (await prisma.unit.findMany({
+          where: { kode: { in: parsed.map((p) => p.kode) } },
+          select: { kode: true },
+        })).map((u) => u.kode),
+      )
+
+      const CHUNK = 50
+      for (let c = 0; c < parsed.length; c += CHUNK) {
+        const chunk = parsed.slice(c, c + CHUNK)
+        try {
+          await prisma.$transaction(async (tx) => {
+            for (const p of chunk) {
+              const alatId = alatMap.get(p.namaAlat)
+              if (!alatId) {
+                errors++
+                results.push({ sheet: 'Unit', row: p.row, ref: p.kode, action: 'error', message: `Alat "${p.namaAlat}" tidak ditemukan di sheet Alat` })
+                continue
+              }
+              if (existingUnits.has(p.kode)) {
+                errors++
+                results.push({ sheet: 'Unit', row: p.row, ref: p.kode, action: 'error', message: 'Kode unit sudah ada' })
+                continue
+              }
+              await tx.unit.create({
+                data: { kode: p.kode, alatId, kondisi: p.kondisi, catatan: p.catatan },
+              })
+              unitCreated++
+              results.push({ sheet: 'Unit', row: p.row, ref: p.kode, action: 'created' })
+            }
+          })
+        } catch {
+          for (const p of chunk) {
+            errors++
+            results.push({ sheet: 'Unit', row: p.row, ref: p.kode, action: 'error', message: 'Gagal menyimpan' })
+          }
+        }
       }
     }
   }
 
   const params = new URLSearchParams({
-    created: String(created),
-    updated: String(updated),
+    alatCreated: String(alatCreated),
+    alatUpdated: String(alatUpdated),
+    unitCreated: String(unitCreated),
     errors: String(errors),
-    log: JSON.stringify(results.slice(0, 50)),
+    log: JSON.stringify(results.slice(0, 80)),
   })
   redirect(`/alat/import?${params.toString()}`)
 }
@@ -161,15 +229,24 @@ async function importAction(formData: FormData) {
 export default async function ImportAlatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; cols?: string; max?: string; created?: string; updated?: string; errors?: string; log?: string }>
+  searchParams: Promise<{
+    error?: string
+    max?: string
+    alatCreated?: string
+    alatUpdated?: string
+    unitCreated?: string
+    errors?: string
+    log?: string
+  }>
 }) {
   const session = await auth()
   if (session?.user.role !== 'admin') redirect('/dashboard')
 
   const sp = await searchParams
-  const hasResult = sp.created !== undefined
-  const created = parseInt(sp.created ?? '0')
-  const updated = parseInt(sp.updated ?? '0')
+  const hasResult = sp.alatCreated !== undefined || sp.unitCreated !== undefined
+  const alatCreated = parseInt(sp.alatCreated ?? '0')
+  const alatUpdated = parseInt(sp.alatUpdated ?? '0')
+  const unitCreated = parseInt(sp.unitCreated ?? '0')
   const errorsCount = parseInt(sp.errors ?? '0')
   let log: RowResult[] = []
   try {
@@ -183,13 +260,15 @@ export default async function ImportAlatPage({
         ? 'File terlalu besar. Maksimal 5 MB'
         : sp.error === 'invalid-file'
           ? 'Format file tidak valid. Pastikan file .xlsx'
-          : sp.error === 'empty'
-            ? 'File Excel kosong'
-            : sp.error === 'missing-columns'
-              ? `Kolom wajib hilang: ${sp.cols ?? ''}`
-              : sp.error === 'too-many-rows'
-                ? `Terlalu banyak baris. Maksimal ${sp.max ?? '2000'} baris per impor.`
-                : null
+          : sp.error === 'no-sheet'
+            ? 'File harus berisi sheet "Alat" dan/atau "Unit"'
+            : sp.error === 'missing-alat-cols'
+              ? 'Sheet "Alat" harus punya kolom: nama, kategori'
+              : sp.error === 'missing-unit-cols'
+                ? 'Sheet "Unit" harus punya kolom: kode, nama_alat'
+                : sp.error === 'too-many-rows'
+                  ? `Terlalu banyak baris. Maksimal ${sp.max ?? '2000'} baris per sheet.`
+                  : null
 
   return (
     <div className="pb-8">
@@ -202,8 +281,8 @@ export default async function ImportAlatPage({
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="hud-title" style={{ fontSize: 22 }}>Import Alat dari Excel</h1>
-          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Upload file .xlsx untuk menambah / memperbarui data alat secara massal</p>
+          <h1 className="hud-title" style={{ fontSize: 22 }}>Import Inventaris dari Excel</h1>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Upload satu file .xlsx berisi 2 sheet: <b>Alat</b> & <b>Unit</b></p>
         </div>
       </div>
 
@@ -220,7 +299,7 @@ export default async function ImportAlatPage({
                 className="hud-input block w-full cursor-pointer text-sm file:mr-4 file:cursor-pointer file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:brightness-110"
               />
               <p className="mt-2 text-xs" style={{ color: '#6b7785' }}>
-                Maksimal 5 MB &amp; 2000 baris. Hanya format .xlsx yang didukung.
+                Maksimal 5 MB &amp; 2000 baris per sheet. Hanya format .xlsx.
               </p>
             </div>
 
@@ -254,39 +333,34 @@ export default async function ImportAlatPage({
         <div className="hud-panel hud-rise p-[22px]">
           <div className="mb-3 flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4" style={{ color: '#5c84ff' }} />
-            <h2 className="hud-label text-[11px]" style={{ color: '#c3ccd6' }}>Format Excel</h2>
+            <h2 className="hud-label text-[11px]" style={{ color: '#c3ccd6' }}>Format File</h2>
           </div>
           <p className="mb-3.5 text-[12.5px] leading-relaxed" style={{ color: '#8a97a3' }}>
-            Baris pertama harus berupa header dengan nama kolom berikut:
+            File Excel berisi <b style={{ color: '#e8edf2' }}>2 sheet</b>:
           </p>
-          <div className="flex flex-col gap-[9px] text-xs">
-            <div className="flex items-center gap-2.5">
-              <span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kode</span>
-              <span style={{ color: '#6b7785' }}>wajib, unik</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>nama</span>
-              <span style={{ color: '#6b7785' }}>wajib</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kategori</span>
-              <span style={{ color: '#6b7785' }}>wajib</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>stok</span>
-              <span style={{ color: '#6b7785' }}>angka, default 0</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>lokasi</span>
-              <span style={{ color: '#6b7785' }}>opsional</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>deskripsi</span>
-              <span style={{ color: '#6b7785' }}>opsional</span>
+
+          <div className="mb-3 hud-clip-sm p-2.5" style={{ border: '1px solid rgba(99,102,241,0.16)' }}>
+            <p className="mb-2 text-[11px] font-bold" style={{ color: '#9bb3ff', letterSpacing: 1 }}>SHEET "ALAT" — jenis alat</p>
+            <div className="flex flex-col gap-[6px] text-xs">
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>nama</span><span style={{ color: '#6b7785' }}>wajib, unik</span></div>
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kategori</span><span style={{ color: '#6b7785' }}>wajib</span></div>
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>lokasi</span><span style={{ color: '#6b7785' }}>opsional</span></div>
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>deskripsi</span><span style={{ color: '#6b7785' }}>opsional</span></div>
             </div>
           </div>
-          <p className="mt-4 text-xs" style={{ color: '#6b7785' }}>
-            Jika <code className="px-1" style={{ background: 'rgba(99,102,241,0.12)' }}>kode</code> sudah ada, data akan diperbarui.
+
+          <div className="hud-clip-sm p-2.5" style={{ border: '1px solid rgba(99,102,241,0.16)' }}>
+            <p className="mb-2 text-[11px] font-bold" style={{ color: '#9bb3ff', letterSpacing: 1 }}>SHEET "UNIT" — unit fisik per alat</p>
+            <div className="flex flex-col gap-[6px] text-xs">
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kode</span><span style={{ color: '#6b7785' }}>wajib, unik</span></div>
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>nama_alat</span><span style={{ color: '#6b7785' }}>wajib, harus cocok dgn sheet Alat</span></div>
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>kondisi</span><span style={{ color: '#6b7785' }}>baik / rusak (default baik)</span></div>
+              <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#8a97a3', background: 'rgba(99,102,241,0.1)' }}>catatan</span><span style={{ color: '#6b7785' }}>opsional</span></div>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs" style={{ color: '#6b7785' }}>
+            Sheet Alat diproses dulu, lalu Unit. Nama alat yang sudah ada akan diperbarui (kategori/lokasi/deskripsi).
           </p>
         </div>
       </div>
@@ -297,17 +371,21 @@ export default async function ImportAlatPage({
             <CheckCircle2 className="h-5 w-5" style={{ color: '#22c55e' }} />
             <h2 className="hud-label text-[12px]" style={{ color: '#c3ccd6' }}>Hasil Import</h2>
           </div>
-          <div className="mb-4 grid grid-cols-3 gap-3">
+          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.05)' }}>
-              <p className="hud-title text-[24px]" style={{ color: '#22c55e' }}>{created}</p>
-              <p className="text-xs" style={{ color: '#6b7785' }}>Ditambahkan</p>
+              <p className="hud-title text-[22px]" style={{ color: '#22c55e' }}>{alatCreated}</p>
+              <p className="text-xs" style={{ color: '#6b7785' }}>Alat dibuat</p>
             </div>
             <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)' }}>
-              <p className="hud-title text-[24px]" style={{ color: '#3b82f6' }}>{updated}</p>
-              <p className="text-xs" style={{ color: '#6b7785' }}>Diperbarui</p>
+              <p className="hud-title text-[22px]" style={{ color: '#3b82f6' }}>{alatUpdated}</p>
+              <p className="text-xs" style={{ color: '#6b7785' }}>Alat update</p>
+            </div>
+            <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.05)' }}>
+              <p className="hud-title text-[22px]" style={{ color: '#22c55e' }}>{unitCreated}</p>
+              <p className="text-xs" style={{ color: '#6b7785' }}>Unit dibuat</p>
             </div>
             <div className="hud-clip-sm p-3 text-center" style={{ border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)' }}>
-              <p className="hud-title text-[24px]" style={{ color: '#ef4444' }}>{errorsCount}</p>
+              <p className="hud-title text-[22px]" style={{ color: '#ef4444' }}>{errorsCount}</p>
               <p className="text-xs" style={{ color: '#6b7785' }}>Gagal</p>
             </div>
           </div>
@@ -317,8 +395,9 @@ export default async function ImportAlatPage({
               <table className="w-full text-xs">
                 <thead className="sticky top-0" style={{ background: '#0e0f14' }}>
                   <tr className="text-left">
+                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Sheet</th>
                     <th className="px-3 py-2" style={{ color: '#6b7785' }}>Baris</th>
-                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Kode</th>
+                    <th className="px-3 py-2" style={{ color: '#6b7785' }}>Referensi</th>
                     <th className="px-3 py-2" style={{ color: '#6b7785' }}>Status</th>
                     <th className="px-3 py-2" style={{ color: '#6b7785' }}>Keterangan</th>
                   </tr>
@@ -326,11 +405,12 @@ export default async function ImportAlatPage({
                 <tbody>
                   {log.map((r, i) => (
                     <tr key={i} style={{ borderTop: '1px solid rgba(99,102,241,0.12)' }}>
+                      <td className="px-3 py-2 font-mono" style={{ color: r.sheet === 'Alat' ? '#5c84ff' : '#a855f7' }}>{r.sheet}</td>
                       <td className="px-3 py-2" style={{ color: '#8a97a3' }}>{r.row}</td>
-                      <td className="px-3 py-2 font-mono" style={{ color: '#c3ccd6' }}>{r.kode}</td>
+                      <td className="px-3 py-2 font-mono" style={{ color: '#c3ccd6' }}>{r.ref}</td>
                       <td className="px-3 py-2">
-                        {r.action === 'created' && <span style={{ color: '#22c55e' }}>Ditambahkan</span>}
-                        {r.action === 'updated' && <span style={{ color: '#3b82f6' }}>Diperbarui</span>}
+                        {r.action === 'created' && <span style={{ color: '#22c55e' }}>Dibuat</span>}
+                        {r.action === 'updated' && <span style={{ color: '#3b82f6' }}>Update</span>}
                         {r.action === 'error' && <span style={{ color: '#ef4444' }}>Gagal</span>}
                       </td>
                       <td className="px-3 py-2" style={{ color: '#6b7785' }}>{r.message ?? '-'}</td>

@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { StockBadge } from '@/components/shared/StockBadge'
-import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check } from 'lucide-react'
 import Link from 'next/link'
 
-const JAM_BUKA = 7   // 07:00
-const JAM_TUTUP = 17 // 17:00
-const HARI_OPERASIONAL = [1, 2, 3, 4, 5, 6] // Senin–Sabtu
-
+const JAM_BUKA = 7
+const JAM_TUTUP = 17
+const HARI_OPERASIONAL = [1, 2, 3, 4, 5, 6]
 const NAMA_HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
 function cekJamOperasional() {
@@ -31,17 +29,26 @@ function cekJamOperasional() {
 
 interface AlatOption {
   id: number
-  kode: string
   nama: string
   kategori: string
-  stok: number
-  stokTersedia: number
+  totalUnit: number
+  tersedia: number
+  dipinjam: number
+  rusak: number
+}
+
+interface UnitOption {
+  id: number
+  kode: string
+  kondisi: 'baik' | 'rusak'
+  status: 'tersedia' | 'dipinjam' | 'rusak'
 }
 
 interface Item {
-  alatId: number
-  alat: AlatOption | null
-  jumlah: number
+  alat: AlatOption
+  units: UnitOption[]
+  selectedUnitIds: number[]
+  loadingUnits: boolean
   keterangan: string
 }
 
@@ -52,14 +59,15 @@ interface KelompokInfo {
 
 export default function BuatPeminjamanPage() {
   const router = useRouter()
-  const [items, setItems] = useState<Item[]>([{ alatId: 0, alat: null, jumlah: 1, keterangan: '' }])
+  const [items, setItems] = useState<Item[]>([])
   const [keperluan, setKeperluan] = useState('')
   const [tanggalBatas, setTanggalBatas] = useState('')
   const [catatan, setCatatan] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [searching, setSearching] = useState(false)
   const [searchResults, setSearchResults] = useState<AlatOption[]>([])
-  const [searchIdx, setSearchIdx] = useState<number | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusWaktu, setStatusWaktu] = useState<ReturnType<typeof cekJamOperasional> | null>(null)
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
@@ -84,32 +92,60 @@ export default function BuatPeminjamanPage() {
         setSearchResults([])
         return
       }
+      setSearching(true)
       const res = await fetch(`/api/alat?search=${encodeURIComponent(searchQuery)}&limit=10`)
       const data = await res.json()
+      setSearching(false)
       setSearchResults(data.data ?? [])
-    }, 300)
+    }, 250)
     return () => clearTimeout(t)
   }, [searchQuery])
 
-  function selectAlat(idx: number, alat: AlatOption) {
-    setItems((prev) => prev.map((item, i) => (i === idx ? { ...item, alatId: alat.id, alat } : item)))
-    setSearchIdx(null)
+  async function pickAlat(alat: AlatOption) {
+    if (items.some((i) => i.alat.id === alat.id)) {
+      setError('Alat sudah ditambahkan')
+      return
+    }
+    setSearchOpen(false)
     setSearchQuery('')
+    setError('')
+    const newItem: Item = { alat, units: [], selectedUnitIds: [], loadingUnits: true, keterangan: '' }
+    setItems((prev) => [...prev, newItem])
+    const res = await fetch(`/api/units?alatId=${alat.id}`)
+    const data = await res.json()
+    setItems((prev) =>
+      prev.map((it) => (it.alat.id === alat.id ? { ...it, units: data.data ?? [], loadingUnits: false } : it)),
+    )
   }
 
-  function addItem() {
-    setItems((prev) => [...prev, { alatId: 0, alat: null, jumlah: 1, keterangan: '' }])
+  function toggleUnit(alatId: number, unitId: number) {
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.alat.id !== alatId) return it
+        const has = it.selectedUnitIds.includes(unitId)
+        return {
+          ...it,
+          selectedUnitIds: has ? it.selectedUnitIds.filter((u) => u !== unitId) : [...it.selectedUnitIds, unitId],
+        }
+      }),
+    )
   }
 
-  function removeItem(idx: number) {
-    setItems((prev) => prev.filter((_, i) => i !== idx))
+  function setKeteranganFor(alatId: number, value: string) {
+    setItems((prev) => prev.map((it) => (it.alat.id === alatId ? { ...it, keterangan: value } : it)))
+  }
+
+  function removeItem(alatId: number) {
+    setItems((prev) => prev.filter((it) => it.alat.id !== alatId))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (!keperluan) { setError('Keperluan wajib diisi'); return }
-    if (items.some((i) => !i.alatId)) { setError('Semua alat harus dipilih'); return }
+    if (!keperluan.trim()) { setError('Keperluan wajib diisi'); return }
+    if (items.length === 0) { setError('Pilih minimal 1 alat'); return }
+    const empty = items.find((it) => it.selectedUnitIds.length === 0)
+    if (empty) { setError(`Pilih minimal 1 unit untuk ${empty.alat.nama}`); return }
 
     setLoading(true)
     const res = await fetch('/api/peminjaman', {
@@ -119,7 +155,10 @@ export default function BuatPeminjamanPage() {
         keperluan,
         tanggalBatasKembali: tanggalBatas || null,
         catatan: catatan || null,
-        items: items.map((i) => ({ alatId: i.alatId, jumlah: i.jumlah, keterangan: i.keterangan || null })),
+        items: items.map((it) => ({
+          unitIds: it.selectedUnitIds,
+          keterangan: it.keterangan || null,
+        })),
       }),
     })
     const data = await res.json()
@@ -132,6 +171,7 @@ export default function BuatPeminjamanPage() {
   }
 
   const diluarJam = statusWaktu !== null && !statusWaktu.boleh
+  const totalUnitDipilih = items.reduce((sum, it) => sum + it.selectedUnitIds.length, 0)
 
   return (
     <div>
@@ -145,7 +185,7 @@ export default function BuatPeminjamanPage() {
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="hud-title" style={{ fontSize: 22 }}>Buat Peminjaman</h1>
-          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Ajukan permintaan peminjaman alat</p>
+          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Pilih alat lalu pilih unit spesifik yang ingin dipinjam</p>
         </div>
         {statusWaktu && (
           <div
@@ -179,140 +219,177 @@ export default function BuatPeminjamanPage() {
               Pengajuan pinjaman tidak tersedia saat ini
             </p>
             <p className="mt-0.5 text-[13px]" style={{ color: '#eab308' }}>
-              Tolong sesuaikan waktu Hari dan Tanggal saat ini. Pengajuan hanya dapat dilakukan pada{' '}
-              <strong>Senin–Sabtu, 07:00–17:00</strong>.
+              Pengajuan hanya dapat dilakukan pada <strong>Senin–Sabtu, 07:00–17:00</strong>.
             </p>
           </div>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div
-          className="grid items-start gap-4"
-          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}
-        >
+        <div className="grid items-start gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
           <div className="space-y-3.5 lg:col-span-2">
-            {/* Items */}
+            {/* Search alat */}
             <div className="hud-panel p-[22px]">
-              <h2 className="hud-label mb-4 text-[12px]" style={{ color: '#c3ccd6' }}>Alat yang Dipinjam</h2>
-              <div className="space-y-3">
-                {items.map((item, idx) => (
+              <h2 className="hud-label mb-3 text-[12px]" style={{ color: '#c3ccd6' }}>Tambah Alat</h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
+                <input
+                  placeholder="Cari nama alat (misal: Router, Switch)..."
+                  value={searchQuery}
+                  onFocus={() => setSearchOpen(true)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
+                  className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
+                />
+                {searchOpen && searchQuery && (
                   <div
-                    key={idx}
-                    className="p-3 hud-clip-sm"
-                    style={{ border: '1px solid rgba(99,102,241,0.16)' }}
+                    className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto hud-clip-sm"
+                    style={{
+                      background: '#0d1117',
+                      border: '1px solid rgba(99,102,241,0.3)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    }}
                   >
-                    {/* Alat search */}
-                    <div className="relative mb-2.5">
-                      {item.alat ? (
-                        <div
-                          className="flex items-center justify-between gap-2 px-3 py-2 hud-clip-sm"
-                          style={{ background: 'rgba(255,255,255,0.03)' }}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[14px] font-semibold" style={{ color: '#fff' }}>{item.alat.nama}</p>
-                            <p className="text-[12px]" style={{ color: '#6b7785' }}>{item.alat.kode}</p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <StockBadge stok={item.alat.stok} stokTersedia={item.alat.stokTersedia} />
-                            <button
-                              type="button"
-                              onClick={() => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, alatId: 0, alat: null } : it))}
-                              className="flex h-8 w-8 items-center justify-center text-[18px]"
-                              style={{ color: '#6b7785' }}
-                              aria-label="Hapus pilihan alat"
-                            >
-                              ×
-                            </button>
-                          </div>
+                    {searching && (
+                      <p className="px-3 py-3 text-[13px]" style={{ color: '#6b7785' }}>Mencari...</p>
+                    )}
+                    {!searching && searchResults.length === 0 && (
+                      <p className="px-3 py-3 text-[13px]" style={{ color: '#6b7785' }}>Tidak ada alat ditemukan</p>
+                    )}
+                    {searchResults.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => pickAlat(a)}
+                        className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-[14px] transition hover:bg-white/5"
+                        style={{ color: '#e8edf2' }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate" style={{ color: '#fff' }}>{a.nama}</p>
+                          <p className="text-[12px]" style={{ color: '#6b7785' }}>{a.kategori}</p>
                         </div>
-                      ) : (
-                        <div>
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
-                            <input
-                              placeholder="Cari alat untuk ditambahkan..."
-                              value={searchIdx === idx ? searchQuery : ''}
-                              onFocus={() => setSearchIdx(idx)}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
-                            />
-                          </div>
-                          {searchIdx === idx && searchResults.length > 0 && (
-                            <div
-                              className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto hud-clip-sm"
+                        <span
+                          className="hud-clip-sm shrink-0 px-2 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            color: a.tersedia > 0 ? '#4ade80' : '#f87171',
+                            background: a.tersedia > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                            border: `1px solid ${a.tersedia > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                          }}
+                        >
+                          {a.tersedia} tersedia
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Selected alats with unit picker */}
+            {items.map((item) => (
+              <div key={item.alat.id} className="hud-panel p-[22px]">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-bold" style={{ color: '#fff' }}>{item.alat.nama}</p>
+                    <p className="mt-0.5 text-[12px]" style={{ color: '#6b7785' }}>
+                      {item.alat.kategori} · {item.alat.tersedia} tersedia
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.alat.id)}
+                    className="hud-clip-sm flex h-9 w-9 shrink-0 items-center justify-center"
+                    style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                    aria-label="Hapus alat"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div
+                  className="p-3"
+                  style={{
+                    border: '1px solid rgba(34,197,94,0.3)',
+                    background: 'rgba(34,197,94,0.03)',
+                  }}
+                >
+                  <p className="mb-2.5 text-[12px]" style={{ color: '#8a97a3' }}>
+                    Pilih unit yang ingin dipinjam (bisa lebih dari 1):
+                  </p>
+                  {item.loadingUnits ? (
+                    <p className="py-4 text-center text-[13px]" style={{ color: '#6b7785' }}>Memuat unit...</p>
+                  ) : item.units.length === 0 ? (
+                    <p className="py-4 text-center text-[13px]" style={{ color: '#6b7785' }}>Belum ada unit untuk alat ini</p>
+                  ) : (
+                    <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+                      {item.units.map((u) => {
+                        const disabled = u.status !== 'tersedia'
+                        const selected = item.selectedUnitIds.includes(u.id)
+                        return (
+                          <button
+                            key={u.id}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => toggleUnit(item.alat.id, u.id)}
+                            className="hud-clip-sm px-3 py-2.5 text-center transition disabled:cursor-not-allowed"
+                            style={{
+                              border: `1px solid ${selected ? '#22c55e' : disabled ? 'rgba(99,102,241,0.16)' : 'rgba(99,102,241,0.25)'}`,
+                              background: selected ? 'rgba(34,197,94,0.12)' : 'transparent',
+                              opacity: disabled ? 0.4 : 1,
+                            }}
+                          >
+                            <p
+                              className="text-[13px] font-bold"
                               style={{
-                                background: '#0d1117',
-                                border: '1px solid rgba(99,102,241,0.3)',
-                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                                fontFamily: 'var(--font-orbitron), sans-serif',
+                                color: selected ? '#22c55e' : u.status === 'tersedia' ? '#4ade80' : u.status === 'rusak' ? '#f87171' : '#6b7785',
                               }}
                             >
-                              {searchResults.map((a) => (
-                                <button
-                                  key={a.id}
-                                  type="button"
-                                  onClick={() => selectAlat(idx, a)}
-                                  className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-[14px] transition"
-                                  style={{ color: '#e8edf2' }}
-                                >
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate" style={{ color: '#fff' }}>{a.nama}</p>
-                                    <p className="text-[12px]" style={{ color: '#6b7785' }}>{a.kode}</p>
-                                  </div>
-                                  <StockBadge stok={a.stok} stokTersedia={a.stokTersedia} />
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                              {u.kode}
+                            </p>
+                            <p className="mt-1 text-[10.5px]" style={{ color: selected ? '#22c55e' : '#6b7785' }}>
+                              {selected ? <span className="inline-flex items-center gap-0.5"><Check className="h-2.5 w-2.5" />Dipilih</span> : u.status === 'tersedia' ? 'Tersedia' : u.status === 'rusak' ? 'Rusak' : 'Dipinjam'}
+                            </p>
+                          </button>
+                        )
+                      })}
                     </div>
-                    <div className="flex items-end gap-2">
-                      <div className="w-20 sm:w-24">
-                        <label className="mb-1.5 block text-[12px]" style={{ color: '#6b7785' }}>Jumlah</label>
-                        <input
-                          type="number"
-                          min="1"
-                          max={item.alat?.stokTersedia ?? 99}
-                          value={item.jumlah}
-                          onChange={(e) => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, jumlah: parseInt(e.target.value) || 1 } : it))}
-                          className="hud-input w-full px-3 py-2.5 text-[14px]"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <label className="mb-1.5 block text-[12px]" style={{ color: '#6b7785' }}>Keterangan</label>
-                        <input
-                          placeholder="Opsional"
-                          value={item.keterangan}
-                          onChange={(e) => setItems((prev) => prev.map((it, i) => i === idx ? { ...it, keterangan: e.target.value } : it))}
-                          className="hud-input w-full px-3 py-2.5 text-[14px]"
-                        />
-                      </div>
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeItem(idx)}
-                          className="flex h-10 w-10 shrink-0 items-center justify-center hud-clip-sm"
-                          style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
-                          aria-label="Hapus item"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )}
+                  {item.selectedUnitIds.length > 0 && (
+                    <p className="mt-3 text-[12.5px]" style={{ color: '#e8edf2' }}>
+                      <b>{item.selectedUnitIds.length} unit dipilih:</b>{' '}
+                      <span style={{ color: '#22c55e' }}>
+                        {item.units
+                          .filter((u) => item.selectedUnitIds.includes(u.id))
+                          .map((u) => u.kode)
+                          .join(', ')}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  <label className="mb-1 block text-[12px]" style={{ color: '#6b7785' }}>Keterangan (opsional)</label>
+                  <input
+                    value={item.keterangan}
+                    onChange={(e) => setKeteranganFor(item.alat.id, e.target.value)}
+                    placeholder="Misal: untuk konfigurasi VLAN"
+                    className="hud-input w-full px-3 py-2 text-[13px]"
+                  />
+                </div>
               </div>
+            ))}
+
+            {items.length > 0 && (
               <button
                 type="button"
-                onClick={addItem}
-                className="mt-3.5 inline-flex items-center gap-2 text-[13.5px] font-semibold"
+                onClick={() => { setSearchOpen(true); setSearchQuery('') }}
+                className="inline-flex items-center gap-2 text-[13.5px] font-semibold"
                 style={{ color: '#5c84ff' }}
               >
                 <Plus className="h-4 w-4" />
-                Tambah Alat
+                Tambah Alat Lain
               </button>
-            </div>
+            )}
           </div>
 
           <div className="space-y-3.5">
@@ -359,7 +436,7 @@ export default function BuatPeminjamanPage() {
                     value={tanggalBatas}
                     onChange={(e) => setTanggalBatas(e.target.value)}
                     className="hud-input w-full px-3 py-2.5 text-[14px]"
-                    style={{ color: '#c3ccd6' }}
+                    style={{ color: '#c3ccd6', colorScheme: 'dark' }}
                   />
                 </div>
                 <div>
@@ -374,6 +451,33 @@ export default function BuatPeminjamanPage() {
                 </div>
               </div>
             </div>
+
+            {items.length > 0 && totalUnitDipilih > 0 && (
+              <div
+                className="hud-panel p-[18px]"
+                style={{ border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.03)' }}
+              >
+                <p className="hud-label mb-2 text-[11px]" style={{ color: '#4ade80' }}>RINGKASAN</p>
+                <ul className="space-y-1.5">
+                  {items.map((it) => (
+                    <li key={it.alat.id} className="text-[13px]" style={{ color: '#e8edf2' }}>
+                      <p className="font-semibold">{it.alat.nama}</p>
+                      <p className="ml-3 text-[12px]" style={{ color: '#6b7785' }}>
+                        Unit: <span style={{ color: '#22c55e' }}>
+                          {it.units
+                            .filter((u) => it.selectedUnitIds.includes(u.id))
+                            .map((u) => u.kode)
+                            .join(', ') || '(belum dipilih)'}
+                        </span>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2.5 border-t pt-2.5 text-[12.5px]" style={{ borderColor: 'rgba(99,102,241,0.16)', color: '#c3ccd6' }}>
+                  Total: <b style={{ color: '#fff' }}>{totalUnitDipilih} unit</b> dari {items.length} jenis alat
+                </div>
+              </div>
+            )}
 
             {error && (
               <p
@@ -390,7 +494,7 @@ export default function BuatPeminjamanPage() {
 
             <button
               type="submit"
-              disabled={loading || diluarJam}
+              disabled={loading || diluarJam || items.length === 0 || totalUnitDipilih === 0}
               className="hud-btn-primary w-full px-[18px] py-3 text-[12px] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? 'MENGAJUKAN...' : diluarJam ? 'DI LUAR JAM OPERASIONAL' : 'AJUKAN PEMINJAMAN'}

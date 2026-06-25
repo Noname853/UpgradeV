@@ -18,12 +18,12 @@ const optionalDate = z.preprocess(
 const optionalText = (max: number) =>
   z.preprocess((v) => (v === '' || v == null ? null : v), z.string().max(max).nullable())
 
-// Field inti alat. Dipakai POST (create) sebagai required, PUT (update) sebagai partial.
+// Field inti alat (jenis). Sejak Plan B, alat tidak lagi punya kode/stok —
+// itu pindah ke tabel Unit. Alat sekarang murni mewakili jenis (misal
+// "Router Mikrotik RB951") dan stok dihitung dari unit yang terkait.
 const alatBase = {
-  kode: z.string().trim().min(1, 'Kode wajib diisi').max(50),
   nama: z.string().trim().min(1, 'Nama wajib diisi').max(200),
   kategori: z.string().trim().min(1, 'Kategori wajib diisi').max(100),
-  stok: z.coerce.number().int('Stok harus bilangan bulat').min(0, 'Stok tidak boleh negatif').max(1_000_000),
   lokasi: z.string().trim().max(200).optional(),
   deskripsi: optionalText(2000),
   foto: fotoUrl,
@@ -33,15 +33,37 @@ const alatBase = {
   keteranganEol: optionalText(500),
 }
 
-// Create: kode/nama/kategori wajib; stok default 0. `.strict()` menolak field tak dikenal
-// sehingga tidak bisa menyetel kolom sembarangan (mass assignment).
-export const alatCreateSchema = z
-  .object({ ...alatBase, stok: alatBase.stok.default(0) })
-  .strict()
+// Create: nama/kategori wajib. `.strict()` menolak field tak dikenal (mass assignment).
+export const alatCreateSchema = z.object(alatBase).strict()
 
 // Update: semua opsional, tetap `.strict()` agar field di luar daftar ditolak.
-export const alatUpdateSchema = z
-  .object(alatBase)
+export const alatUpdateSchema = z.object(alatBase).partial().strict()
+
+// ============================================================================
+// Skema Unit (unit fisik per alat)
+// Kode unik per unit, kondisi enum (baik/rusak). `.strict()` mencegah field liar.
+// ============================================================================
+
+const kondisiRule = z.enum(['baik', 'rusak'])
+
+const unitBase = {
+  kode: z.string().trim().min(1, 'Kode unit wajib diisi').max(50),
+  alatId: z.coerce.number().int().positive('alatId tidak valid'),
+  kondisi: kondisiRule,
+  catatan: optionalText(500),
+}
+
+export const unitCreateSchema = z
+  .object({ ...unitBase, kondisi: unitBase.kondisi.default('baik') })
+  .strict()
+
+// Update: tanpa alatId (unit tidak boleh pindah alat lewat update biasa).
+export const unitUpdateSchema = z
+  .object({
+    kode: unitBase.kode,
+    kondisi: unitBase.kondisi,
+    catatan: unitBase.catatan,
+  })
   .partial()
   .strict()
 

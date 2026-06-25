@@ -30,10 +30,8 @@ model User {
 
 model Alat {
   id            Int       @id @default(autoincrement())
-  kode          String    @unique
-  nama          String
+  nama          String    @unique
   kategori      String
-  stok          Int       @default(0)
   lokasi        String    @default("")
   deskripsi     String?
   foto          String?
@@ -44,9 +42,24 @@ model Alat {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  peminjamanDetails PeminjamanDetail[]
+  units Unit[]
 
   @@map("alats")
+}
+
+model Unit {
+  id        Int      @id @default(autoincrement())
+  kode      String   @unique
+  alatId    Int      @map("alat_id")
+  kondisi   String   @default("baik")
+  catatan   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  alat              Alat               @relation(fields: [alatId], references: [id], onDelete: Restrict)
+  peminjamanDetails PeminjamanDetail[]
+
+  @@map("units")
 }
 
 model Peminjaman {
@@ -69,10 +82,10 @@ model Peminjaman {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  user            User  @relation("UserPeminjaman", fields: [userId], references: [id])
-  verifiedByUser  User? @relation("VerifiedBy", fields: [verifiedBy], references: [id])
-  returnedByUser  User? @relation("ReturnedBy", fields: [returnedBy], references: [id])
-  cancelledByUser User? @relation("CancelledBy", fields: [cancelledBy], references: [id])
+  user            User               @relation("UserPeminjaman", fields: [userId], references: [id])
+  verifiedByUser  User?              @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+  returnedByUser  User?              @relation("ReturnedBy", fields: [returnedBy], references: [id])
+  cancelledByUser User?              @relation("CancelledBy", fields: [cancelledBy], references: [id])
   details         PeminjamanDetail[]
 
   @@map("peminjamans")
@@ -81,14 +94,14 @@ model Peminjaman {
 model PeminjamanDetail {
   id           Int      @id @default(autoincrement())
   peminjamanId Int      @map("peminjaman_id")
-  alatId       Int      @map("alat_id")
-  jumlah       Int
+  unitId       Int      @map("unit_id")
   keterangan   String?
+  kerusakan    String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   peminjaman Peminjaman @relation(fields: [peminjamanId], references: [id], onDelete: Cascade)
-  alat       Alat       @relation(fields: [alatId], references: [id])
+  unit       Unit       @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
   @@map("peminjaman_details")
 }

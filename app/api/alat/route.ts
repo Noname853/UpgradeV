@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { alatCreateSchema } from '@/lib/validations'
 import { isSameOrigin } from '@/lib/csrf'
 
+const AKTIF = ['menunggu_verifikasi', 'dipinjam']
+
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const where = {
     AND: [
-      search ? { OR: [{ nama: { contains: search } }, { kode: { contains: search } }] } : {},
+      search ? { nama: { contains: search } } : {},
       kategori ? { kategori } : {},
     ],
   }
@@ -30,9 +32,15 @@ export async function GET(req: NextRequest) {
       take: limit,
       orderBy: { nama: 'asc' },
       include: {
-        peminjamanDetails: {
-          where: { peminjaman: { status: { in: ['menunggu_verifikasi', 'dipinjam'] } } },
-          select: { jumlah: true },
+        units: {
+          select: {
+            id: true,
+            kondisi: true,
+            peminjamanDetails: {
+              where: { peminjaman: { status: { in: AKTIF } } },
+              select: { id: true },
+            },
+          },
         },
       },
     }),
@@ -40,11 +48,29 @@ export async function GET(req: NextRequest) {
   ])
 
   const data = alats.map((a) => {
-    const dipinjam = a.peminjamanDetails.reduce((sum, d) => sum + d.jumlah, 0)
+    let tersedia = 0, dipinjam = 0, rusak = 0
+    for (const u of a.units) {
+      if (u.kondisi === 'rusak') rusak++
+      else if (u.peminjamanDetails.length > 0) dipinjam++
+      else tersedia++
+    }
     return {
-      ...a,
-      peminjamanDetails: undefined,
-      stokTersedia: a.stok - dipinjam,
+      id: a.id,
+      nama: a.nama,
+      kategori: a.kategori,
+      lokasi: a.lokasi,
+      deskripsi: a.deskripsi,
+      foto: a.foto,
+      tanggalEos: a.tanggalEos,
+      tanggalEol: a.tanggalEol,
+      keteranganEos: a.keteranganEos,
+      keteranganEol: a.keteranganEol,
+      createdAt: a.createdAt,
+      updatedAt: a.updatedAt,
+      totalUnit: a.units.length,
+      tersedia,
+      dipinjam,
+      rusak,
     }
   })
 
@@ -62,17 +88,13 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
     }
-    const { kode, lokasi, ...rest } = parsed.data
+    const { lokasi, ...rest } = parsed.data
 
-    const existing = await prisma.alat.findUnique({ where: { kode } })
-    if (existing) return NextResponse.json({ error: 'Kode alat sudah digunakan' }, { status: 400 })
+    const existing = await prisma.alat.findUnique({ where: { nama: rest.nama } })
+    if (existing) return NextResponse.json({ error: 'Nama alat sudah digunakan' }, { status: 400 })
 
     const alat = await prisma.alat.create({
-      data: {
-        kode,
-        lokasi: lokasi ?? '',
-        ...rest,
-      },
+      data: { lokasi: lokasi ?? '', ...rest },
     })
 
     return NextResponse.json(alat, { status: 201 })
