@@ -154,7 +154,7 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
             {dipinjam > 0 && <div style={{ flex: dipinjam, background: '#60a5fa' }} />}
             {rusak > 0 && <div style={{ flex: rusak, background: '#f87171' }} />}
           </div>
-          <div className="mt-2 flex justify-between text-[11px]">
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
             <span style={{ color: '#4ade80' }}>{tersedia} tersedia</span>
             <span style={{ color: '#60a5fa' }}>{dipinjam} dipinjam</span>
             <span style={{ color: '#f87171' }}>{rusak} rusak</span>
@@ -193,12 +193,12 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 1fr' }}>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
           <div className="flex flex-col gap-4" style={{ minWidth: 0 }}>
             {infoSection}
             <UnitManager alatId={alat.id} initialUnits={unitRows} />
           </div>
-          {sidebar}
+          <div className="order-first lg:order-none">{sidebar}</div>
         </div>
       </div>
     )
@@ -220,7 +220,7 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 1fr' }}>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-4" style={{ minWidth: 0 }}>
           {infoSection}
           {/* Unit list for siswa - read only */}
@@ -250,7 +250,7 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
             </div>
           )}
         </div>
-        {sidebar}
+        <div className="order-first lg:order-none">{sidebar}</div>
       </div>
     </div>
   )
