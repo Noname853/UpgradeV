@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check } from 'lucide-react'
 import Link from 'next/link'
@@ -71,6 +72,40 @@ export default function BuatPeminjamanPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusWaktu, setStatusWaktu] = useState<ReturnType<typeof cekJamOperasional> | null>(null)
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!searchOpen || !searchQuery) {
+      setDropdownPos(null)
+      return
+    }
+    function updatePos() {
+      const el = searchInputRef.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      setDropdownPos({ top: r.bottom + 4, left: r.left, width: r.width })
+    }
+    updatePos()
+    window.addEventListener('scroll', updatePos, true)
+    window.addEventListener('resize', updatePos)
+    return () => {
+      window.removeEventListener('scroll', updatePos, true)
+      window.removeEventListener('resize', updatePos)
+    }
+  }, [searchOpen, searchQuery])
+
+  useEffect(() => {
+    if (!searchOpen) return
+    function onClick(e: MouseEvent) {
+      const t = e.target as HTMLElement
+      if (searchInputRef.current?.contains(t)) return
+      if (t.closest('[data-search-dropdown]')) return
+      setSearchOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [searchOpen])
 
   useEffect(() => {
     setStatusWaktu(cekJamOperasional())
@@ -234,16 +269,23 @@ export default function BuatPeminjamanPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
                 <input
+                  ref={searchInputRef}
                   placeholder="Cari nama alat (misal: Router, Switch)..."
                   value={searchQuery}
                   onFocus={() => setSearchOpen(true)}
                   onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
                   className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
                 />
-                {searchOpen && searchQuery && (
+                {searchOpen && searchQuery && dropdownPos && typeof window !== 'undefined' && createPortal(
                   <div
-                    className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto hud-clip-sm"
+                    data-search-dropdown
+                    className="max-h-72 overflow-y-auto hud-clip-sm"
                     style={{
+                      position: 'fixed',
+                      top: dropdownPos.top,
+                      left: dropdownPos.left,
+                      width: dropdownPos.width,
+                      zIndex: 9999,
                       background: '#0d1117',
                       border: '1px solid rgba(99,102,241,0.3)',
                       boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
@@ -279,7 +321,8 @@ export default function BuatPeminjamanPage() {
                         </span>
                       </button>
                     ))}
-                  </div>
+                  </div>,
+                  document.body,
                 )}
               </div>
             </div>
