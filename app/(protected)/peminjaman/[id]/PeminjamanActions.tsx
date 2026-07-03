@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CheckCircle, RotateCcw, XCircle, AlertTriangle } from 'lucide-react'
 
 interface UnitItem {
@@ -121,7 +122,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
         )}
       </div>
 
-      {returnOpen && (
+      {returnOpen && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           style={{ background: 'rgba(3,7,14,0.7)' }}
@@ -227,7 +228,8 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Plus, Wrench, CheckCircle2, Trash2, AlertCircle, X } from 'lucide-react'
 
@@ -148,9 +149,9 @@ export function UnitManager({ alatId, initialUnits }: Props) {
   return (
     <div className="hud-panel p-[22px]">
       {/* Bulk confirm dialog */}
-      {bulkConfirm && (
+      {bulkConfirm && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }}
         >
           <div
@@ -224,7 +225,8 @@ export function UnitManager({ alatId, initialUnits }: Props) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
