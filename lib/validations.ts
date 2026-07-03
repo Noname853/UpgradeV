@@ -67,6 +67,14 @@ export const unitUpdateSchema = z
   .partial()
   .strict()
 
+// Bulk update kondisi: maks 100 unit sekaligus.
+export const unitBulkUpdateSchema = z
+  .object({
+    ids: z.array(z.number().int().positive()).min(1).max(100),
+    kondisi: kondisiRule,
+  })
+  .strict()
+
 // ============================================================================
 // Skema user (dipakai oleh route admin /api/users)
 // Memberlakukan kebijakan password yang sama dengan /api/register: min 8, max 72
