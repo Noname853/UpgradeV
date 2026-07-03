@@ -84,6 +84,9 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
                       {d.keterangan && (
                         <p className="mt-1 text-[12px]" style={{ color: '#8a97a3' }}>Keterangan: {d.keterangan}</p>
                       )}
+                      {d.kerusakan && (
+                        <p className="mt-1 text-[12px] font-medium" style={{ color: '#ef4444' }}>Rusak: {d.kerusakan}</p>
+                      )}
                     </div>
                     <span
                       className="hud-clip-sm px-2.5 py-1 text-[12px] font-bold"
@@ -172,6 +175,11 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
               status={peminjaman.status}
               isAdmin={isAdmin}
               isOwner={peminjaman.userId === currentUserId}
+              units={peminjaman.details.map((d) => ({
+                unitId: d.unit.id,
+                kode: d.unit.kode,
+                nama: d.unit.alat.nama,
+              }))}
             />
           </div>
         </div>
@@ -225,6 +233,9 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
                       {d.unit.alat.nama}
                     </Link>
                     <p className="mt-px text-[12px]" style={{ color: '#6b7785' }}>{d.unit.alat.kategori}</p>
+                    {d.kerusakan && (
+                      <p className="mt-1 text-[12px] font-medium" style={{ color: '#ef4444' }}>Rusak: {d.kerusakan}</p>
+                    )}
                   </div>
                   <span
                     className="hud-clip-sm shrink-0 px-2.5 py-1 text-[12px] font-bold"

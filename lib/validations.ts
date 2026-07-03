@@ -76,6 +76,26 @@ export const unitBulkUpdateSchema = z
   .strict()
 
 // ============================================================================
+// Skema pengembalian peminjaman (dipakai oleh /api/peminjaman/[id]/return)
+// Admin bisa menandai unit mana yang rusak saat barang dikembalikan. `unitId`
+// yang tidak termasuk peminjaman ini diabaikan di server (lihat route).
+// ============================================================================
+export const peminjamanReturnSchema = z
+  .object({
+    catatan: optionalText(500),
+    kerusakan: z
+      .array(
+        z.object({
+          unitId: z.number().int().positive(),
+          catatan: z.string().trim().max(500).optional(),
+        }),
+      )
+      .max(100)
+      .optional(),
+  })
+  .strict()
+
+// ============================================================================
 // Skema user (dipakai oleh route admin /api/users)
 // Memberlakukan kebijakan password yang sama dengan /api/register: min 8, max 72
 // (bcrypt memotong di 72 byte). `.strict()` mencegah mass-assignment.
