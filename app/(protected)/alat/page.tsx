@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatDate } from '@/lib/utils'
-import { Plus, Search, Package, FileSpreadsheet } from 'lucide-react'
+import { Plus, Search, Package, FileSpreadsheet, QrCode } from 'lucide-react'
 import Link from 'next/link'
 
 const AKTIF = ['menunggu_verifikasi', 'dipinjam']
@@ -185,6 +185,11 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
             <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>{total} jenis alat terdaftar</p>
           </div>
           <div className="flex flex-wrap gap-2.5">
+            <Link href="/alat/labels" className="hud-btn-ghost flex items-center gap-2 px-4 py-2.5 text-[12px]">
+              <QrCode className="h-4 w-4" />
+              <span className="hidden sm:inline">Label QR</span>
+              <span className="sm:hidden">QR</span>
+            </Link>
             <Link href="/alat/import" className="hud-btn-ghost flex items-center gap-2 px-4 py-2.5 text-[12px]">
               <FileSpreadsheet className="h-4 w-4" />
               <span className="hidden sm:inline">Import Excel</span>

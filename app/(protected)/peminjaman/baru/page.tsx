@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check, ScanLine } from 'lucide-react'
 import Link from 'next/link'
+import { ScanQrDialog, type ScannedUnit } from '@/components/peminjaman/ScanQrDialog'
 
 const JAM_BUKA = 7
 const JAM_TUTUP = 17
@@ -73,6 +74,7 @@ export default function BuatPeminjamanPage() {
   const [statusWaktu, setStatusWaktu] = useState<ReturnType<typeof cekJamOperasional> | null>(null)
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [scanOpen, setScanOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -174,6 +176,49 @@ export default function BuatPeminjamanPage() {
     setItems((prev) => prev.filter((it) => it.alat.id !== alatId))
   }
 
+  // Hasil scan QR: unit sudah divalidasi server (ada + tersedia). Tinggal
+  // masukkan ke keranjang — gabung ke kartu alat yang sudah ada, atau buat
+  // kartu baru lalu muat daftar unitnya seperti pickAlat.
+  function addScannedUnit(unit: ScannedUnit): 'added' | 'duplicate' {
+    const existing = items.find((it) => it.alat.id === unit.alat.id)
+    if (existing) {
+      if (existing.selectedUnitIds.includes(unit.id)) return 'duplicate'
+      setItems((prev) =>
+        prev.map((it) =>
+          it.alat.id === unit.alat.id
+            ? { ...it, selectedUnitIds: [...it.selectedUnitIds, unit.id] }
+            : it,
+        ),
+      )
+      return 'added'
+    }
+
+    setError('')
+    const newItem: Item = {
+      alat: unit.alat,
+      units: [],
+      selectedUnitIds: [unit.id],
+      loadingUnits: true,
+      keterangan: '',
+    }
+    setItems((prev) => [...prev, newItem])
+    fetch(`/api/units?alatId=${unit.alat.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setItems((prev) =>
+          prev.map((it) =>
+            it.alat.id === unit.alat.id ? { ...it, units: data.data ?? [], loadingUnits: false } : it,
+          ),
+        )
+      })
+      .catch(() => {
+        setItems((prev) =>
+          prev.map((it) => (it.alat.id === unit.alat.id ? { ...it, loadingUnits: false } : it)),
+        )
+      })
+    return 'added'
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -266,16 +311,32 @@ export default function BuatPeminjamanPage() {
             {/* Search alat */}
             <div className="hud-panel p-[22px]">
               <h2 className="hud-label mb-3 text-[12px]" style={{ color: '#c3ccd6' }}>Tambah Alat</h2>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
-                <input
-                  ref={searchInputRef}
-                  placeholder="Cari nama alat (misal: Router, Switch)..."
-                  value={searchQuery}
-                  onFocus={() => setSearchOpen(true)}
-                  onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
-                  className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
-                />
+              <div className="flex gap-2.5">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
+                  <input
+                    ref={searchInputRef}
+                    placeholder="Cari nama alat (misal: Router, Switch)..."
+                    value={searchQuery}
+                    onFocus={() => setSearchOpen(true)}
+                    onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
+                    className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setScanOpen(true)}
+                  className="hud-clip-sm inline-flex shrink-0 items-center gap-2 px-3.5 text-[13px] font-semibold"
+                  style={{
+                    color: '#5c84ff',
+                    border: '1px solid rgba(99,102,241,0.35)',
+                    background: 'rgba(99,102,241,0.08)',
+                  }}
+                  aria-label="Scan QR unit"
+                >
+                  <ScanLine className="h-4 w-4" />
+                  <span className="hidden sm:inline">Scan QR</span>
+                </button>
                 {searchOpen && searchQuery && dropdownPos && typeof window !== 'undefined' && createPortal(
                   <div
                     data-search-dropdown
@@ -545,6 +606,13 @@ export default function BuatPeminjamanPage() {
           </div>
         </div>
       </form>
+
+      <ScanQrDialog
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onUnitScanned={addScannedUnit}
+        totalDipilih={totalUnitDipilih}
+      />
     </div>
   )
 }

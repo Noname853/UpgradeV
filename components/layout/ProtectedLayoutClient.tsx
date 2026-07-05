@@ -26,11 +26,11 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
 
   return (
     <div
-      className="hud-root flex h-screen overflow-hidden"
+      className="hud-root flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible"
       style={{ background: 'var(--hud-bg)' }}
     >
       {/* Desktop sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
+      <div className="hidden md:flex md:flex-shrink-0 print:hidden">
         <Sidebar role={userRole} />
       </div>
 
@@ -58,14 +58,16 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
       )}
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar
-          userName={userName}
-          userRole={userRole}
-          userKelas={userKelas}
-          onMenuToggle={() => setMobileOpen(true)}
-        />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+      <div className="flex flex-1 flex-col overflow-hidden print:block print:overflow-visible">
+        <div className="print:hidden">
+          <Topbar
+            userName={userName}
+            userRole={userRole}
+            userKelas={userKelas}
+            onMenuToggle={() => setMobileOpen(true)}
+          />
+        </div>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 print:overflow-visible print:p-0">{children}</main>
       </div>
     </div>
   )

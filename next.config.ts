@@ -27,7 +27,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-DNS-Prefetch-Control', value: 'off' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
+          // camera=(self): dipakai fitur scan QR di form peminjaman.
+          // Origin lain (iframe pihak ketiga) tetap tidak boleh akses kamera.
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           // Isolasi konteks browsing (defense-in-depth). COEP sengaja TIDAK
           // di-set agar gambar lintas-origin (foto alat dari Imgur dll) tetap muat.
