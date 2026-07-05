@@ -10,6 +10,21 @@ interface SearchParams {
   alatId?: string
 }
 
+// Cache hasil generate QR per proses server. Kode unit hampir tidak pernah
+// berubah, jadi tiap kode cukup digenerate sekali; kunjungan dan klik filter
+// berikutnya tinggal pakai ulang (236 unit ≈ ratusan ms CPU yang dihemat).
+// Kunci = kode: bila kode diganti, entri baru dibuat dan entri lama menganggur
+// (ukurannya kecil, dibersihkan saat proses restart).
+const qrCache = new Map<string, string>()
+
+async function qrDataUrl(kode: string): Promise<string> {
+  const cached = qrCache.get(kode)
+  if (cached) return cached
+  const dataUrl = await QRCode.toDataURL(kode, { margin: 1, width: 240, errorCorrectionLevel: 'M' })
+  qrCache.set(kode, dataUrl)
+  return dataUrl
+}
+
 export default async function LabelsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   // Halaman ini memetakan seluruh kode inventaris — khusus admin.
   const session = await auth()
@@ -38,7 +53,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
       id: u.id,
       kode: u.kode,
       alatNama: u.alat.nama,
-      qr: await QRCode.toDataURL(u.kode, { margin: 1, width: 240, errorCorrectionLevel: 'M' }),
+      qr: await qrDataUrl(u.kode),
     })),
   )
 
