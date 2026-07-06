@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, Check, Keyboard, ScanLine, X, AlertCircle } from 'lucide-react'
+import { Camera, Check, ScanLine, X, AlertCircle } from 'lucide-react'
 import type { Html5Qrcode } from 'html5-qrcode'
 
 export interface ScannedUnit {
@@ -38,21 +38,17 @@ const KODE_RE = /^[A-Za-z0-9 _\-.()/]{1,64}$/
 const REGION_ID = 'qr-scan-region'
 
 export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Props) {
-  const [manual, setManual] = useState('')
   const [toast, setToast] = useState<Toast | null>(null)
   const [cameraError, setCameraError] = useState('')
   const [cameraReady, setCameraReady] = useState(false)
-  const [busy, setBusy] = useState(false)
-
   const scannerRef = useRef<Html5Qrcode | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   // Kamera membaca ~10 frame/detik: tahan kode yang sama agar satu stiker
   // tidak diproses berkali-kali selama masih di depan lensa.
   const lastScanRef = useRef<{ kode: string; at: number }>({ kode: '', at: 0 })
   const busyRef = useRef(false)
 
   const handleCode = useCallback(
-    async (raw: string, via: 'kamera' | 'input') => {
+    async (raw: string) => {
       const kode = raw.trim()
       if (!kode) return
       if (!KODE_RE.test(kode)) {
@@ -61,18 +57,13 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
       }
 
       const now = Date.now()
-      if (
-        via === 'kamera' &&
-        lastScanRef.current.kode === kode.toLowerCase() &&
-        now - lastScanRef.current.at < 2500
-      ) {
+      if (lastScanRef.current.kode === kode.toLowerCase() && now - lastScanRef.current.at < 2500) {
         return
       }
       lastScanRef.current = { kode: kode.toLowerCase(), at: now }
 
       if (busyRef.current) return
       busyRef.current = true
-      setBusy(true)
       try {
         const res = await fetch(`/api/units/lookup?kode=${encodeURIComponent(kode)}`)
         const data = await res.json().catch(() => ({}))
@@ -110,7 +101,6 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
         setToast({ kind: 'err', text: 'Jaringan bermasalah, coba lagi.' })
       } finally {
         busyRef.current = false
-        setBusy(false)
       }
     },
     [onUnitScanned],
@@ -144,7 +134,7 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 220, height: 220 } },
-          (decodedText) => handleCodeRef.current(decodedText, 'kamera'),
+          (decodedText) => handleCodeRef.current(decodedText),
           () => {
             /* frame tanpa QR: abaikan */
           },
@@ -155,18 +145,15 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
         if (cancelled) return
         setCameraError(
           window.isSecureContext
-            ? 'Kamera tidak tersedia atau izin ditolak. Kamu tetap bisa memakai alat scan / ketik manual di bawah.'
-            : 'Kamera butuh koneksi HTTPS. Gunakan alat scan / ketik manual di bawah.',
+            ? 'Kamera tidak tersedia atau izin ditolak. Izinkan akses kamera lalu buka ulang dialog ini.'
+            : 'Kamera butuh koneksi HTTPS. Buka halaman ini lewat alamat HTTPS.',
         )
       }
     }
     start()
 
-    const focusTimer = setTimeout(() => inputRef.current?.focus(), 150)
-
     return () => {
       cancelled = true
-      clearTimeout(focusTimer)
       const s = scanner
       scannerRef.current = null
       if (s) {
@@ -224,7 +211,7 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
           <div className="min-w-0 flex-1">
             <p className="text-[14.5px] font-bold" style={{ color: '#fff' }}>Scan QR Unit</p>
             <p className="text-[11.5px]" style={{ color: '#6b7785' }}>
-              Arahkan kamera ke stiker, atau pakai alat scan
+              Arahkan kamera ke stiker QR unit
             </p>
           </div>
           <button
@@ -258,50 +245,6 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
               </div>
             )}
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1" style={{ background: 'rgba(99,102,241,0.16)' }} />
-            <span className="text-[10.5px] uppercase tracking-widest" style={{ color: '#6b7785' }}>
-              atau alat scan / manual
-            </span>
-            <span className="h-px flex-1" style={{ background: 'rgba(99,102,241,0.16)' }} />
-          </div>
-
-          {/* Alat scan USB/Bluetooth bertindak sebagai keyboard: mengetik kode
-              lalu Enter ke input ini. */}
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleCode(manual, 'input')
-              setManual('')
-              inputRef.current?.focus()
-            }}
-          >
-            <div className="relative flex-1">
-              <Keyboard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
-              <input
-                ref={inputRef}
-                value={manual}
-                onChange={(e) => setManual(e.target.value)}
-                maxLength={64}
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="Kode unit, misal RB_1"
-                className="hud-input w-full py-2.5 pl-9 pr-3 text-[13.5px]"
-                style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
-                aria-label="Kode unit"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={busy || !manual.trim()}
-              className="hud-clip-sm px-4 text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-40"
-              style={{ color: '#5c84ff', border: '1px solid rgba(99,102,241,0.35)' }}
-            >
-              Tambah
-            </button>
-          </form>
 
           {toast && (
             <p
