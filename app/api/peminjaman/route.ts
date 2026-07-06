@@ -19,7 +19,8 @@ const peminjamanCreateSchema = z
       .array(
         z
           .object({
-            unitIds: z.array(z.coerce.number().int().positive()).min(1).max(50),
+            // Maks 1 unit per alat: satu item = satu jenis alat = satu unit.
+            unitIds: z.array(z.coerce.number().int().positive()).min(1).max(1),
             keterangan: z.preprocess(
               (v) => (v === '' || v == null ? null : v),
               z.string().max(500).nullable(),
@@ -134,6 +135,9 @@ export async function POST(req: NextRequest) {
         throw new UnitError('Sebagian unit tidak ditemukan')
       }
 
+      // Maks 1 unit per jenis alat dalam satu pengajuan — dicek dari alat milik
+      // unit (bukan struktur items) agar tidak bisa diakali lewat item terpisah.
+      const alatTerpakai = new Set<number>()
       for (const u of units) {
         if (u.kondisi !== 'baik') {
           throw new UnitError(`Unit ${u.kode} (${u.alat.nama}) sedang rusak, tidak bisa dipinjam`)
@@ -141,6 +145,10 @@ export async function POST(req: NextRequest) {
         if (u.peminjamanDetails.length > 0) {
           throw new UnitError(`Unit ${u.kode} (${u.alat.nama}) sedang dipinjam, silakan pilih unit lain`)
         }
+        if (alatTerpakai.has(u.alat.id)) {
+          throw new UnitError(`Maksimal 1 unit per alat — ${u.alat.nama} dipilih lebih dari 1 unit`)
+        }
+        alatTerpakai.add(u.alat.id)
       }
 
       return tx.peminjaman.create({

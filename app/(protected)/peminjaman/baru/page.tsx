@@ -155,15 +155,13 @@ export default function BuatPeminjamanPage() {
     )
   }
 
+  // Maks 1 unit per alat: memilih unit lain menggantikan pilihan sebelumnya.
   function toggleUnit(alatId: number, unitId: number) {
     setItems((prev) =>
       prev.map((it) => {
         if (it.alat.id !== alatId) return it
         const has = it.selectedUnitIds.includes(unitId)
-        return {
-          ...it,
-          selectedUnitIds: has ? it.selectedUnitIds.filter((u) => u !== unitId) : [...it.selectedUnitIds, unitId],
-        }
+        return { ...it, selectedUnitIds: has ? [] : [unitId] }
       }),
     )
   }
@@ -179,15 +177,15 @@ export default function BuatPeminjamanPage() {
   // Hasil scan QR: unit sudah divalidasi server (ada + tersedia). Tinggal
   // masukkan ke keranjang — gabung ke kartu alat yang sudah ada, atau buat
   // kartu baru lalu muat daftar unitnya seperti pickAlat.
-  function addScannedUnit(unit: ScannedUnit): 'added' | 'duplicate' {
+  function addScannedUnit(unit: ScannedUnit): 'added' | 'duplicate' | 'limit' {
     const existing = items.find((it) => it.alat.id === unit.alat.id)
     if (existing) {
       if (existing.selectedUnitIds.includes(unit.id)) return 'duplicate'
+      // Maks 1 unit per alat: alat ini sudah punya unit terpilih.
+      if (existing.selectedUnitIds.length > 0) return 'limit'
       setItems((prev) =>
         prev.map((it) =>
-          it.alat.id === unit.alat.id
-            ? { ...it, selectedUnitIds: [...it.selectedUnitIds, unit.id] }
-            : it,
+          it.alat.id === unit.alat.id ? { ...it, selectedUnitIds: [unit.id] } : it,
         ),
       )
       return 'added'
@@ -417,7 +415,7 @@ export default function BuatPeminjamanPage() {
                   }}
                 >
                   <p className="mb-2.5 text-[12px]" style={{ color: '#8a97a3' }}>
-                    Pilih unit yang ingin dipinjam (bisa lebih dari 1):
+                    Pilih 1 unit yang ingin dipinjam (maksimal 1 unit per alat):
                   </p>
                   {item.loadingUnits ? (
                     <p className="py-4 text-center text-[13px]" style={{ color: '#6b7785' }}>Memuat unit...</p>

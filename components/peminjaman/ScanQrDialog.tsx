@@ -24,8 +24,9 @@ export interface ScannedUnit {
 interface Props {
   open: boolean
   onClose: () => void
-  // Mengembalikan 'added' bila unit masuk keranjang, 'duplicate' bila sudah ada.
-  onUnitScanned: (unit: ScannedUnit) => 'added' | 'duplicate'
+  // Mengembalikan 'added' bila unit masuk keranjang, 'duplicate' bila sudah
+  // ada, 'limit' bila alat tersebut sudah punya 1 unit terpilih.
+  onUnitScanned: (unit: ScannedUnit) => 'added' | 'duplicate' | 'limit'
   totalDipilih: number
 }
 
@@ -94,6 +95,8 @@ export function ScanQrDialog({ open, onClose, onUnitScanned, totalDipilih }: Pro
         const result = onUnitScanned(unit)
         if (result === 'duplicate') {
           setToast({ kind: 'err', text: `${unit.kode} sudah ada di daftar.` })
+        } else if (result === 'limit') {
+          setToast({ kind: 'err', text: `${unit.alat.nama} sudah dipilih 1 unit — maksimal 1 unit per alat.` })
         } else {
           setToast({ kind: 'ok', text: `${unit.kode} · ${unit.alat.nama} ditambahkan.` })
         }
