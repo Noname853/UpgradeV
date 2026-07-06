@@ -6,6 +6,7 @@ import { formatDate, formatDateTime } from '@/lib/utils'
 import { ArrowLeft, Package, User, FileText, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { PeminjamanActions } from './PeminjamanActions'
+import { TandaiCatatanDibaca } from './TandaiCatatanDibaca'
 
 // Catatan yang ditulis admin saat memproses pengembalian. Ditampilkan sebagai
 // callout tersendiri (bukan baris di panel Detail) supaya terbaca oleh siswa —
@@ -234,7 +235,12 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
       >
         <div className="space-y-3.5">
           {peminjaman.status === 'dikembalikan' && peminjaman.catatanPengembalian && (
-            <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
+            <>
+              <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
+              {!isAdmin && !peminjaman.catatanDibacaAt && (
+                <TandaiCatatanDibaca peminjamanId={peminjaman.id} />
+              )}
+            </>
           )}
           {/* Items */}
           <div className="hud-panel p-[22px]">

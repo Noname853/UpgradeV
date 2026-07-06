@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ActivityChart } from '@/components/dashboard/ActivityChart'
+import { CatatanAdminBanner } from '@/components/dashboard/CatatanAdminBanner'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { Clock } from 'lucide-react'
@@ -194,7 +195,7 @@ export default async function DashboardPage() {
   }
 
   // Siswa dashboard
-  const [peminjamanAktif, menungguVerifikasi, riwayat] = await Promise.all([
+  const [peminjamanAktif, menungguVerifikasi, riwayat, catatanBelumDibaca] = await Promise.all([
     prisma.peminjaman.findMany({
       where: { userId, status: 'dipinjam' },
       take: 3,
@@ -207,7 +208,31 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       include: { details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
     }),
+    // Catatan pengembalian dari admin yang belum dibaca -> banner teratas.
+    prisma.peminjaman.findMany({
+      where: {
+        userId,
+        status: 'dikembalikan',
+        catatanPengembalian: { not: null },
+        catatanDibacaAt: null,
+      },
+      orderBy: { tanggalKembali: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        catatanPengembalian: true,
+        tanggalKembali: true,
+        details: { select: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } },
+      },
+    }),
   ])
+
+  const catatanItems = catatanBelumDibaca.map((p) => ({
+    id: p.id,
+    catatan: p.catatanPengembalian as string,
+    tanggalKembali: p.tanggalKembali ? formatDate(p.tanggalKembali) : null,
+    alat: p.details.map((d) => `${d.unit.alat.nama} (${d.unit.kode})`).join(', '),
+  }))
 
   const siswaStats = [
     { title: 'Sedang Dipinjam', value: peminjamanAktif.length, color: '#3b82f6' },
@@ -223,6 +248,8 @@ export default async function DashboardPage() {
           Halo, {session?.user.name}
         </p>
       </div>
+
+      <CatatanAdminBanner items={catatanItems} />
 
       {/* stat grid */}
       <div

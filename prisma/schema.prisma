@@ -75,6 +75,9 @@ model Peminjaman {
   keperluan           String
   catatan             String?
   catatanPengembalian String?   @map("catatan_pengembalian")
+  // Kapan siswa membaca catatan pengembalian; null = belum dibaca.
+  // Dipakai banner "catatan dari admin" di dashboard siswa.
+  catatanDibacaAt     DateTime? @map("catatan_dibaca_at")
   alasanPembatalan    String?   @map("alasan_pembatalan")
   verifiedBy          Int?      @map("verified_by")
   returnedBy          Int?      @map("returned_by")
