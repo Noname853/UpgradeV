@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Plus, Wrench, CheckCircle2, Trash2, AlertCircle, X } from 'lucide-react'
+import { Plus, Wrench, CheckCircle2, Trash2, AlertCircle, X, SquarePen } from 'lucide-react'
 
 interface UnitRow {
   id: number
@@ -117,7 +117,10 @@ export function UnitManager({ alatId, initialUnits }: Props) {
   async function toggleKondisi(unit: UnitRow) {
     if (unit.status === 'dipinjam') return
     const next = unit.kondisi === 'baik' ? 'rusak' : 'baik'
-    const catatan = next === 'rusak' ? prompt('Catatan kerusakan (opsional):') ?? unit.catatan : unit.catatan
+    // Kembali "baik" = kerusakan selesai: catatan kerusakannya ikut dibersihkan
+    // (riwayat kerusakan tetap tersimpan di detail peminjaman).
+    const catatan =
+      next === 'rusak' ? prompt('Catatan kerusakan (opsional):') ?? unit.catatan : null
     setLoading(true)
     const res = await fetch(`/api/units/${unit.id}`, {
       method: 'PATCH',
@@ -128,6 +131,24 @@ export function UnitManager({ alatId, initialUnits }: Props) {
     if (!res.ok) {
       const data = await res.json()
       alert(data.error ?? 'Gagal mengubah kondisi')
+      return
+    }
+    router.refresh()
+  }
+
+  async function editCatatan(unit: UnitRow) {
+    const input = prompt('Catatan unit (kosongkan untuk menghapus):', unit.catatan ?? '')
+    if (input === null) return // batal
+    setLoading(true)
+    const res = await fetch(`/api/units/${unit.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ catatan: input.trim() }),
+    })
+    setLoading(false)
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.error ?? 'Gagal mengubah catatan')
       return
     }
     router.refresh()
@@ -435,6 +456,16 @@ export function UnitManager({ alatId, initialUnits }: Props) {
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => editCatatan(u)}
+                          className="hud-clip-sm flex h-7 w-7 items-center justify-center"
+                          style={{ color: '#5c84ff', border: '1px solid rgba(92,132,255,0.3)' }}
+                          title="Ubah Catatan"
+                        >
+                          <SquarePen className="h-3.5 w-3.5" />
+                        </button>
                         {u.status !== 'dipinjam' && (
                           <>
                             <button

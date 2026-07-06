@@ -33,7 +33,9 @@ export async function PATCH(req: NextRequest) {
 
     const result = await prisma.unit.updateMany({
       where: { id: { in: updateIds } },
-      data: { kondisi },
+      // Kembali "baik" = kerusakan selesai: bersihkan juga catatan kerusakan
+      // (konsisten dengan toggle per-unit di UnitManager).
+      data: kondisi === 'baik' ? { kondisi, catatan: null } : { kondisi },
     })
 
     return NextResponse.json({ updated: result.count, skipped: skipIds.size })
