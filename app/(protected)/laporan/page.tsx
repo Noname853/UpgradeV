@@ -147,12 +147,13 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
               name="status"
               defaultValue={filter.status}
               className="hud-input hud-clip-sm w-full appearance-none px-3 py-2 text-sm"
+              style={{ colorScheme: 'dark' }}
             >
-              <option value="">Semua Status</option>
-              <option value="menunggu_verifikasi">Menunggu</option>
-              <option value="dipinjam">Dipinjam</option>
-              <option value="dikembalikan">Dikembalikan</option>
-              <option value="dibatalkan">Dibatalkan</option>
+              <option value="" style={{ background: '#0f1420', color: '#e8edf2' }}>Semua Status</option>
+              <option value="menunggu_verifikasi" style={{ background: '#0f1420', color: '#e8edf2' }}>Menunggu</option>
+              <option value="dipinjam" style={{ background: '#0f1420', color: '#e8edf2' }}>Dipinjam</option>
+              <option value="dikembalikan" style={{ background: '#0f1420', color: '#e8edf2' }}>Dikembalikan</option>
+              <option value="dibatalkan" style={{ background: '#0f1420', color: '#e8edf2' }}>Dibatalkan</option>
             </select>
           </div>
           <div>
