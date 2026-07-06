@@ -3,9 +3,28 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate, formatDateTime } from '@/lib/utils'
-import { ArrowLeft, Package, User, FileText } from 'lucide-react'
+import { ArrowLeft, Package, User, FileText, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { PeminjamanActions } from './PeminjamanActions'
+
+// Catatan yang ditulis admin saat memproses pengembalian. Ditampilkan sebagai
+// callout tersendiri (bukan baris di panel Detail) supaya terbaca oleh siswa —
+// ini pesan untuk peminjam, bukan sekadar metadata. Aksen biru netral,
+// dibedakan dari merah kerusakan karena isinya bisa apa saja termasuk pujian.
+function CatatanPengembalian({ catatan }: { catatan: string }) {
+  return (
+    <div
+      className="hud-panel p-[18px]"
+      style={{ border: '1px solid rgba(92,132,255,0.35)', background: 'linear-gradient(160deg, rgba(92,132,255,0.08), rgba(255,255,255,0.01))' }}
+    >
+      <h2 className="hud-label mb-2 flex items-center gap-2 text-[11px]" style={{ color: '#5c84ff' }}>
+        <MessageSquare className="h-4 w-4" />
+        Catatan dari Admin saat Pengembalian
+      </h2>
+      <p className="text-[13.5px] leading-relaxed" style={{ color: '#e8edf2' }}>{catatan}</p>
+    </div>
+  )
+}
 
 export default async function PeminjamanDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -63,6 +82,9 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
           style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}
         >
           <div className="space-y-3.5 lg:col-span-2" style={{ gridColumn: 'auto' }}>
+            {peminjaman.status === 'dikembalikan' && peminjaman.catatanPengembalian && (
+              <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
+            )}
             {/* Items */}
             <div className="hud-panel p-[22px]">
               <h2 className="hud-label mb-3.5 flex items-center gap-2 text-[11px]" style={{ color: '#c3ccd6' }}>
@@ -211,6 +233,9 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}
       >
         <div className="space-y-3.5">
+          {peminjaman.status === 'dikembalikan' && peminjaman.catatanPengembalian && (
+            <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
+          )}
           {/* Items */}
           <div className="hud-panel p-[22px]">
             <h2 className="hud-label mb-3.5 flex items-center gap-2 text-[11px]" style={{ color: '#c3ccd6' }}>
