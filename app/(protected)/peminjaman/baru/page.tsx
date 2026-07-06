@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check, ScanLine } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check, ScanLine, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { ScanQrDialog, type ScannedUnit } from '@/components/peminjaman/ScanQrDialog'
 
@@ -52,6 +52,8 @@ interface Item {
   selectedUnitIds: number[]
   loadingUnits: boolean
   keterangan: string
+  // Unit hasil scan QR terkunci: siswa tidak bisa mengganti unit lewat grid.
+  scanned: boolean
 }
 
 interface KelompokInfo {
@@ -146,7 +148,7 @@ export default function BuatPeminjamanPage() {
     setSearchOpen(false)
     setSearchQuery('')
     setError('')
-    const newItem: Item = { alat, units: [], selectedUnitIds: [], loadingUnits: true, keterangan: '' }
+    const newItem: Item = { alat, units: [], selectedUnitIds: [], loadingUnits: true, keterangan: '', scanned: false }
     setItems((prev) => [...prev, newItem])
     const res = await fetch(`/api/units?alatId=${alat.id}`)
     const data = await res.json()
@@ -156,10 +158,11 @@ export default function BuatPeminjamanPage() {
   }
 
   // Maks 1 unit per alat: memilih unit lain menggantikan pilihan sebelumnya.
+  // Unit hasil scan QR tidak bisa diubah lewat grid.
   function toggleUnit(alatId: number, unitId: number) {
     setItems((prev) =>
       prev.map((it) => {
-        if (it.alat.id !== alatId) return it
+        if (it.alat.id !== alatId || it.scanned) return it
         const has = it.selectedUnitIds.includes(unitId)
         return { ...it, selectedUnitIds: has ? [] : [unitId] }
       }),
@@ -180,12 +183,18 @@ export default function BuatPeminjamanPage() {
   function addScannedUnit(unit: ScannedUnit): 'added' | 'duplicate' | 'limit' {
     const existing = items.find((it) => it.alat.id === unit.alat.id)
     if (existing) {
-      if (existing.selectedUnitIds.includes(unit.id)) return 'duplicate'
+      if (existing.selectedUnitIds.includes(unit.id)) {
+        // Unit yang sama di-scan ulang: kunci pilihannya (scan = pegang fisik).
+        setItems((prev) =>
+          prev.map((it) => (it.alat.id === unit.alat.id ? { ...it, scanned: true } : it)),
+        )
+        return 'duplicate'
+      }
       // Maks 1 unit per alat: alat ini sudah punya unit terpilih.
       if (existing.selectedUnitIds.length > 0) return 'limit'
       setItems((prev) =>
         prev.map((it) =>
-          it.alat.id === unit.alat.id ? { ...it, selectedUnitIds: [unit.id] } : it,
+          it.alat.id === unit.alat.id ? { ...it, selectedUnitIds: [unit.id], scanned: true } : it,
         ),
       )
       return 'added'
@@ -198,6 +207,7 @@ export default function BuatPeminjamanPage() {
       selectedUnitIds: [unit.id],
       loadingUnits: true,
       keterangan: '',
+      scanned: true,
     }
     setItems((prev) => [...prev, newItem])
     fetch(`/api/units?alatId=${unit.alat.id}`)
@@ -414,9 +424,16 @@ export default function BuatPeminjamanPage() {
                     background: 'rgba(34,197,94,0.03)',
                   }}
                 >
-                  <p className="mb-2.5 text-[12px]" style={{ color: '#8a97a3' }}>
-                    Pilih 1 unit yang ingin dipinjam (maksimal 1 unit per alat):
-                  </p>
+                  {item.scanned ? (
+                    <p className="mb-2.5 flex items-center gap-1.5 text-[12px]" style={{ color: '#4ade80' }}>
+                      <Lock className="h-3.5 w-3.5 shrink-0" />
+                      Unit hasil scan QR — pilihan terkunci, tidak bisa diubah.
+                    </p>
+                  ) : (
+                    <p className="mb-2.5 text-[12px]" style={{ color: '#8a97a3' }}>
+                      Pilih 1 unit yang ingin dipinjam (maksimal 1 unit per alat):
+                    </p>
+                  )}
                   {item.loadingUnits ? (
                     <p className="py-4 text-center text-[13px]" style={{ color: '#6b7785' }}>Memuat unit...</p>
                   ) : item.units.length === 0 ? (
@@ -424,8 +441,8 @@ export default function BuatPeminjamanPage() {
                   ) : (
                     <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
                       {item.units.map((u) => {
-                        const disabled = u.status !== 'tersedia'
                         const selected = item.selectedUnitIds.includes(u.id)
+                        const disabled = u.status !== 'tersedia' || item.scanned
                         return (
                           <button
                             key={u.id}
@@ -436,7 +453,7 @@ export default function BuatPeminjamanPage() {
                             style={{
                               border: `1px solid ${selected ? '#22c55e' : disabled ? 'rgba(99,102,241,0.16)' : 'rgba(99,102,241,0.25)'}`,
                               background: selected ? 'rgba(34,197,94,0.12)' : 'transparent',
-                              opacity: disabled ? 0.4 : 1,
+                              opacity: selected ? 1 : disabled ? 0.4 : 1,
                             }}
                           >
                             <p
