@@ -208,13 +208,19 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       include: { details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
     }),
-    // Catatan pengembalian dari admin yang belum dibaca -> banner teratas.
+    // Catatan admin yang belum dibaca -> banner teratas. Mencakup DUA jenis
+    // catatan dari dialog pengembalian: catatan umum (catatanPengembalian)
+    // dan catatan kerusakan per unit (PeminjamanDetail.kerusakan) — admin
+    // sering hanya mengisi salah satunya.
     prisma.peminjaman.findMany({
       where: {
         userId,
         status: 'dikembalikan',
-        catatanPengembalian: { not: null },
         catatanDibacaAt: null,
+        OR: [
+          { catatanPengembalian: { not: null } },
+          { details: { some: { kerusakan: { not: null } } } },
+        ],
       },
       orderBy: { tanggalKembali: 'desc' },
       take: 10,
@@ -222,16 +228,21 @@ export default async function DashboardPage() {
         id: true,
         catatanPengembalian: true,
         tanggalKembali: true,
-        details: { select: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } },
+        details: {
+          select: { kerusakan: true, unit: { select: { kode: true, alat: { select: { nama: true } } } } },
+        },
       },
     }),
   ])
 
   const catatanItems = catatanBelumDibaca.map((p) => ({
     id: p.id,
-    catatan: p.catatanPengembalian as string,
+    catatan: p.catatanPengembalian,
     tanggalKembali: p.tanggalKembali ? formatDate(p.tanggalKembali) : null,
     alat: p.details.map((d) => `${d.unit.alat.nama} (${d.unit.kode})`).join(', '),
+    kerusakan: p.details
+      .filter((d) => d.kerusakan)
+      .map((d) => ({ kode: d.unit.kode, catatan: d.kerusakan as string })),
   }))
 
   const siswaStats = [

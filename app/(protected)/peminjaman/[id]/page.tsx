@@ -235,13 +235,16 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
       >
         <div className="space-y-3.5">
           {peminjaman.status === 'dikembalikan' && peminjaman.catatanPengembalian && (
-            <>
-              <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
-              {!isAdmin && !peminjaman.catatanDibacaAt && (
-                <TandaiCatatanDibaca peminjamanId={peminjaman.id} />
-              )}
-            </>
+            <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
           )}
+          {/* Membuka detail = membaca catatan (umum maupun kerusakan per unit,
+              yang tampil merah di kartu unit di bawah). */}
+          {!isAdmin &&
+            peminjaman.status === 'dikembalikan' &&
+            !peminjaman.catatanDibacaAt &&
+            (peminjaman.catatanPengembalian || peminjaman.details.some((d) => d.kerusakan)) && (
+              <TandaiCatatanDibaca peminjamanId={peminjaman.id} />
+            )}
           {/* Items */}
           <div className="hud-panel p-[22px]">
             <h2 className="hud-label mb-3.5 flex items-center gap-2 text-[11px]" style={{ color: '#c3ccd6' }}>

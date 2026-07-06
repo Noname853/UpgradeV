@@ -20,13 +20,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const peminjaman = await prisma.peminjaman.findUnique({
       where: { id: numId },
-      select: { userId: true, catatanPengembalian: true, catatanDibacaAt: true },
+      select: {
+        userId: true,
+        catatanPengembalian: true,
+        catatanDibacaAt: true,
+        details: { select: { kerusakan: true } },
+      },
     })
     // 404 juga untuk peminjaman milik orang lain — jangan bocorkan keberadaannya.
     if (!peminjaman || peminjaman.userId !== parseInt(session.user.id)) {
       return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
     }
-    if (!peminjaman.catatanPengembalian) {
+    // "Catatan" mencakup catatan umum ATAU catatan kerusakan per unit.
+    const adaCatatan =
+      peminjaman.catatanPengembalian !== null || peminjaman.details.some((d) => d.kerusakan !== null)
+    if (!adaCatatan) {
       return NextResponse.json({ error: 'Tidak ada catatan' }, { status: 400 })
     }
 

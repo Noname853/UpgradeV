@@ -6,9 +6,11 @@ import { MessageSquare, Check } from 'lucide-react'
 
 export interface CatatanBelumDibaca {
   id: number
-  catatan: string
+  catatan: string | null // catatan pengembalian umum (bisa kosong)
   tanggalKembali: string | null // sudah diformat di server
   alat: string
+  // Catatan kerusakan per unit dari dialog pengembalian yang sama.
+  kerusakan: { kode: string; catatan: string }[]
 }
 
 // Banner di dashboard siswa: daftar catatan pengembalian dari admin yang
@@ -87,9 +89,16 @@ export function CatatanAdminBanner({ items: initial }: { items: CatatanBelumDiba
               >
                 Peminjaman #{it.id} · {it.alat}
               </Link>
-              <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: '#b3bdc7' }}>
-                &ldquo;{it.catatan}&rdquo;
-              </p>
+              {it.catatan && (
+                <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: '#b3bdc7' }}>
+                  &ldquo;{it.catatan}&rdquo;
+                </p>
+              )}
+              {it.kerusakan.map((k) => (
+                <p key={k.kode} className="mt-1 text-[12.5px] leading-relaxed" style={{ color: '#fca5a5' }}>
+                  Rusak — <span style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>{k.kode}</span>: {k.catatan}
+                </p>
+              ))}
               {it.tanggalKembali && (
                 <p className="mt-1 text-[11px]" style={{ color: '#6b7785' }}>Dikembalikan {it.tanggalKembali}</p>
               )}
