@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle, RotateCcw, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle, RotateCcw, XCircle, AlertTriangle, Keyboard, Check } from 'lucide-react'
+import { QrCameraBox } from '@/components/shared/QrCameraBox'
 
 interface UnitItem {
   unitId: number
@@ -28,6 +29,47 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
   const [returnOpen, setReturnOpen] = useState(false)
   const [rusak, setRusak] = useState<Record<number, string>>({}) // unitId -> catatan
   const [catatan, setCatatan] = useState('')
+  // Verifikasi fisik via scan QR: unit harus discan satu per satu sebelum
+  // pengembalian bisa diproses — barang tertukar ketahuan di sini.
+  const [verified, setVerified] = useState<Set<number>>(new Set())
+  const [skipReason, setSkipReason] = useState('')
+  const [scanInput, setScanInput] = useState('')
+  const [scanMsg, setScanMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+
+  function openReturn() {
+    setRusak({})
+    setCatatan('')
+    setVerified(new Set())
+    setSkipReason('')
+    setScanInput('')
+    setScanMsg(null)
+    setReturnOpen(true)
+  }
+
+  function handleScanCode(raw: string) {
+    const kode = raw.trim()
+    if (!kode) return
+    const unit = units.find((u) => u.kode.toLowerCase() === kode.toLowerCase())
+    if (!unit) {
+      setScanMsg({
+        kind: 'err',
+        text: `${kode} BUKAN bagian peminjaman ini — barang tertukar? Yang dipinjam: ${units.map((u) => u.kode).join(', ')}.`,
+      })
+      return
+    }
+    if (verified.has(unit.unitId)) {
+      setScanMsg({ kind: 'err', text: `${unit.kode} sudah terverifikasi.` })
+      return
+    }
+    setVerified((prev) => new Set(prev).add(unit.unitId))
+    setScanMsg({ kind: 'ok', text: `${unit.kode} cocok — ${unit.nama} terverifikasi kembali.` })
+  }
+
+  function skipScan() {
+    const alasan = prompt('Alasan memproses tanpa scan lengkap (wajib):')
+    if (!alasan || !alasan.trim()) return
+    setSkipReason(alasan.trim())
+  }
 
   async function doAction(action: string, body: Record<string, unknown> = {}) {
     setLoading(action)
@@ -61,7 +103,16 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
       unitId: Number(unitId),
       catatan: cat.trim() || undefined,
     }))
-    doAction('return', { catatan: catatan.trim() || undefined, kerusakan })
+    // Alasan skip ikut tercatat di catatan pengembalian agar terlihat di
+    // riwayat (dan di banner siswa) — bukan jalan pintas diam-diam.
+    const catatanFinal = [
+      catatan.trim(),
+      skipReason ? `[Diproses tanpa scan lengkap — alasan: ${skipReason}]` : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .slice(0, 500)
+    doAction('return', { catatan: catatanFinal || undefined, kerusakan })
   }
 
   const canVerify = isAdmin && status === 'menunggu_verifikasi'
@@ -97,7 +148,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
         )}
         {canReturn && (
           <button
-            onClick={() => setReturnOpen(true)}
+            onClick={openReturn}
             disabled={loading === 'return'}
             className="flex w-full items-center gap-2.5 px-3.5 py-3 text-[13.5px] font-semibold transition hud-clip-sm disabled:opacity-60"
             style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.1)', border: '1px solid rgba(92,132,255,0.25)' }}
@@ -142,30 +193,59 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </div>
               <h3 className="text-[15px] font-bold" style={{ color: '#e8edf2' }}>Proses Pengembalian</h3>
             </div>
-            <p className="mb-3.5 text-[12.5px] leading-relaxed" style={{ color: '#8a97a3' }}>
-              Centang unit yang <span style={{ color: '#ef4444' }}>rusak</span> saat dikembalikan. Unit yang dicentang
-              akan ditandai rusak dan tercatat pada riwayat peminjam.
+            <p className="mb-3 text-[12.5px] leading-relaxed" style={{ color: '#8a97a3' }}>
+              Scan QR tiap barang yang dikembalikan untuk memastikan{' '}
+              <span style={{ color: '#5c84ff' }}>unit fisik yang benar</span> memang kembali. Setelah terverifikasi,
+              unit yang <span style={{ color: '#ef4444' }}>rusak</span> bisa ditandai.
             </p>
 
-            <div className="mb-3.5 flex max-h-[46vh] flex-col gap-2 overflow-y-auto">
+            {/* progres verifikasi */}
+            <div className="mb-3 flex items-center gap-2.5 text-[12px]" style={{ color: '#8a97a3' }}>
+              <span>
+                Terverifikasi <b style={{ color: '#fff' }}>{verified.size}/{units.length}</b>
+              </span>
+              <span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                <span
+                  className="block h-full rounded-full transition-all"
+                  style={{
+                    width: `${units.length ? (verified.size / units.length) * 100 : 0}%`,
+                    background: 'linear-gradient(90deg, #3b82f6, #22c55e)',
+                  }}
+                />
+              </span>
+            </div>
+
+            <div className="mb-3 flex max-h-[34vh] flex-col gap-2 overflow-y-auto">
               {units.map((u) => {
+                const isVerified = verified.has(u.unitId)
+                const rusakAllowed = isVerified || !!skipReason
                 const checked = u.unitId in rusak
                 return (
                   <div
                     key={u.unitId}
                     className="px-3 py-2.5 hud-clip-sm"
                     style={{
-                      background: checked ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${checked ? 'rgba(239,68,68,0.3)' : 'rgba(99,102,241,0.14)'}`,
+                      background: checked
+                        ? 'rgba(239,68,68,0.07)'
+                        : isVerified
+                          ? 'rgba(34,197,94,0.05)'
+                          : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${
+                        checked ? 'rgba(239,68,68,0.3)' : isVerified ? 'rgba(34,197,94,0.4)' : 'rgba(99,102,241,0.14)'
+                      }`,
                     }}
                   >
-                    <label className="flex cursor-pointer items-center gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleRusak(u.unitId)}
-                        className="h-4 w-4 shrink-0 accent-red-500"
-                      />
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px]"
+                        style={
+                          isVerified
+                            ? { color: '#22c55e', border: '2px solid #22c55e' }
+                            : { color: '#6b7785', border: '2px dashed rgba(99,102,241,0.4)' }
+                        }
+                      >
+                        {isVerified ? <Check className="h-3.5 w-3.5" /> : '?'}
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="text-[13.5px] font-semibold" style={{ color: '#e8edf2' }}>{u.nama}</span>
                         <span
@@ -174,8 +254,22 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
                         >
                           {u.kode}
                         </span>
+                        <span className="mt-0.5 block text-[11px]" style={{ color: isVerified ? '#4ade80' : '#6b7785' }}>
+                          {isVerified ? 'Terverifikasi via scan' : 'Belum discan'}
+                        </span>
                       </span>
-                    </label>
+                    </div>
+                    {rusakAllowed && (
+                      <label className="mt-2 flex cursor-pointer items-center gap-2 pl-8 text-[12px]" style={{ color: '#8a97a3' }}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleRusak(u.unitId)}
+                          className="h-3.5 w-3.5 shrink-0 accent-red-500"
+                        />
+                        Tandai rusak
+                      </label>
+                    )}
                     {checked && (
                       <input
                         type="text"
@@ -183,13 +277,72 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
                         onChange={(e) => setRusak((prev) => ({ ...prev, [u.unitId]: e.target.value }))}
                         placeholder="Catatan kerusakan (opsional)"
                         maxLength={500}
-                        className="mt-2 w-full px-2.5 py-1.5 text-[12.5px] hud-clip-sm"
+                        className="ml-8 mt-2 w-[calc(100%-2rem)] px-2.5 py-1.5 text-[12.5px] hud-clip-sm"
                         style={{ color: '#e8edf2', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(239,68,68,0.25)' }}
                       />
                     )}
                   </div>
                 )
               })}
+            </div>
+
+            {/* strip scan: kamera + input alat scan fisik */}
+            <div className="mb-3 flex gap-2.5">
+              <div className="w-[110px] shrink-0">
+                <QrCameraBox onCode={handleScanCode} height={84} />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <form
+                  className="flex gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleScanCode(scanInput)
+                    setScanInput('')
+                  }}
+                >
+                  <div className="relative min-w-0 flex-1">
+                    <Keyboard className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: '#5d717d' }} />
+                    <input
+                      value={scanInput}
+                      onChange={(e) => setScanInput(e.target.value)}
+                      maxLength={64}
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Alat scan / ketik kode + Enter"
+                      className="w-full py-2 pl-8 pr-2.5 text-[12px] hud-clip-sm"
+                      style={{
+                        color: '#e8edf2',
+                        background: 'rgba(0,0,0,0.25)',
+                        border: '1px solid rgba(99,102,241,0.3)',
+                        fontFamily: 'var(--font-geist-mono), monospace',
+                      }}
+                      aria-label="Kode unit"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!scanInput.trim()}
+                    className="shrink-0 px-3 text-[12px] font-semibold hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ color: '#5c84ff', border: '1px solid rgba(92,132,255,0.35)' }}
+                  >
+                    Scan
+                  </button>
+                </form>
+                {scanMsg && (
+                  <p
+                    className="px-2.5 py-1.5 text-[11.5px] leading-snug hud-clip-sm"
+                    role="status"
+                    aria-live="polite"
+                    style={
+                      scanMsg.kind === 'ok'
+                        ? { color: '#4ade80', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }
+                        : { color: '#fca5a5', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }
+                    }
+                  >
+                    {scanMsg.text}
+                  </p>
+                )}
+              </div>
             </div>
 
             <input
@@ -209,6 +362,27 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </p>
             )}
 
+            {skipReason && (
+              <p
+                className="mb-3 px-3 py-2 text-[12px] leading-relaxed hud-clip-sm"
+                style={{ color: '#fbbf24', background: 'rgba(234,179,8,0.07)', border: '1px solid rgba(234,179,8,0.35)' }}
+              >
+                ⚠️ Diproses tanpa verifikasi scan lengkap — alasan: <b>{skipReason}</b>. Tercatat di catatan
+                pengembalian.
+              </p>
+            )}
+
+            {verified.size < units.length && !skipReason && (
+              <button
+                type="button"
+                onClick={skipScan}
+                className="mb-3 text-[11.5px] underline"
+                style={{ color: '#6b7785' }}
+              >
+                Proses tanpa scan lengkap…
+              </button>
+            )}
+
             <div className="flex gap-2.5">
               <button
                 onClick={() => setReturnOpen(false)}
@@ -220,9 +394,10 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </button>
               <button
                 onClick={submitReturn}
-                disabled={!!loading}
-                className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:opacity-60"
+                disabled={!!loading || (verified.size < units.length && !skipReason)}
+                className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
                 style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.12)', border: '1px solid rgba(92,132,255,0.3)' }}
+                title={verified.size < units.length && !skipReason ? 'Scan semua unit dulu' : undefined}
               >
                 {loading === 'return' ? 'Memproses...' : 'Proses Pengembalian'}
               </button>

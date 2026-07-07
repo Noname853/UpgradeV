@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { Plus, PackageCheck, Search, Archive, X } from 'lucide-react'
 import Link from 'next/link'
+import { ScanPengembalianButton } from '@/components/peminjaman/ScanPengembalianButton'
 
 const STATUS_TABS = [
   { label: 'Semua', value: '' },
@@ -137,16 +138,19 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
               {archivedCount > 0 && ` · ${archivedCount.toLocaleString('id-ID')} di arsip`}
             </p>
           </div>
-          {archivedCount > 0 && (
-            <Link
-              href="/peminjaman/arsip"
-              className="hud-clip-sm inline-flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition"
-              style={{ color: '#9bb3ff', border: '1px solid rgba(92,132,255,0.35)' }}
-            >
-              <Archive className="h-3.5 w-3.5" />
-              LIHAT ARSIP
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <ScanPengembalianButton />
+            {archivedCount > 0 && (
+              <Link
+                href="/peminjaman/arsip"
+                className="hud-clip-sm inline-flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition"
+                style={{ color: '#9bb3ff', border: '1px solid rgba(92,132,255,0.35)' }}
+              >
+                <Archive className="h-3.5 w-3.5" />
+                LIHAT ARSIP
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Status tabs */}
