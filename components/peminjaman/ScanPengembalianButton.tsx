@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { ScanLine, X, Keyboard, PackageSearch } from 'lucide-react'
+import { ScanLine, X, PackageSearch } from 'lucide-react'
 import { QrCameraBox } from '@/components/shared/QrCameraBox'
 
 interface LookupResult {
@@ -24,7 +24,6 @@ interface LookupResult {
 export function ScanPengembalianButton() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [manual, setManual] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err' | 'warn'; text: string } | null>(null)
   const [found, setFound] = useState<LookupResult | null>(null)
@@ -68,10 +67,38 @@ export function ScanPengembalianButton() {
 
   function close() {
     setOpen(false)
-    setManual('')
     setMsg(null)
     setFound(null)
   }
+
+  // Alat scan fisik (mode HID keyboard) mengetik kode + Enter dengan jeda
+  // antar-tombol < ~30ms. Dengarkan global saat dialog terbuka dan terima
+  // hanya rentetan berkecepatan mesin — ketikan manusia terlalu lambat,
+  // jadi tidak ada jalur ketik manual.
+  const handleCodeRef = useRef(handleCode)
+  handleCodeRef.current = handleCode
+  useEffect(() => {
+    if (!open) return
+    let buffer = ''
+    let lastAt = 0
+    function onKey(e: KeyboardEvent) {
+      const now = Date.now()
+      if (now - lastAt > 100) buffer = ''
+      lastAt = now
+      if (e.key === 'Enter') {
+        if (buffer.length >= 2) handleCodeRef.current(buffer)
+        buffer = ''
+        return
+      }
+      if (e.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+      if (e.key.length === 1) buffer += e.key
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
     <>
@@ -127,45 +154,12 @@ export function ScanPengembalianButton() {
               </div>
 
               <div className="mb-3">
-                <QrCameraBox onCode={handleCode} height={170} />
+                <QrCameraBox onCode={handleCode} height={190} />
               </div>
 
-              <form
-                className="mb-3 flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  handleCode(manual)
-                  setManual('')
-                }}
-              >
-                <div className="relative min-w-0 flex-1">
-                  <Keyboard className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: '#5d717d' }} />
-                  <input
-                    value={manual}
-                    onChange={(e) => setManual(e.target.value)}
-                    maxLength={64}
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="Alat scan / ketik kode + Enter"
-                    className="w-full py-2 pl-8 pr-2.5 text-[12.5px] hud-clip-sm"
-                    style={{
-                      color: '#e8edf2',
-                      background: 'rgba(0,0,0,0.25)',
-                      border: '1px solid rgba(99,102,241,0.3)',
-                      fontFamily: 'var(--font-geist-mono), monospace',
-                    }}
-                    aria-label="Kode unit"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={busy || !manual.trim()}
-                  className="shrink-0 px-3.5 text-[12.5px] font-semibold hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
-                  style={{ color: '#5c84ff', border: '1px solid rgba(92,132,255,0.35)' }}
-                >
-                  Cari
-                </button>
-              </form>
+              <p className="mb-3 text-center text-[11px]" style={{ color: '#6b7785' }}>
+                Arahkan kamera ke stiker QR — alat scan fisik juga langsung terbaca
+              </p>
 
               {msg && (
                 <p

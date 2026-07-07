@@ -57,8 +57,8 @@ export function QrCameraBox({ onCode, height = 180 }: Props) {
         if (cancelled) return
         setError(
           typeof window !== 'undefined' && window.isSecureContext
-            ? 'Kamera tidak tersedia atau izin ditolak — pakai alat scan / ketik manual.'
-            : 'Kamera butuh HTTPS — pakai alat scan / ketik manual.',
+            ? 'Kamera tidak tersedia atau izin ditolak — gunakan alat scan fisik.'
+            : 'Kamera butuh HTTPS — gunakan alat scan fisik.',
         )
       }
     }
