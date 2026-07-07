@@ -76,7 +76,9 @@ export function ScanPengembalianButton() {
   // hanya rentetan berkecepatan mesin — ketikan manusia terlalu lambat,
   // jadi tidak ada jalur ketik manual.
   const handleCodeRef = useRef(handleCode)
-  handleCodeRef.current = handleCode
+  useEffect(() => {
+    handleCodeRef.current = handleCode
+  })
   useEffect(() => {
     if (!open) return
     let buffer = ''
