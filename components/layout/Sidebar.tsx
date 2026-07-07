@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-type NavItem = { href: string; label: string; color: string }
+type NavItem = { href: string; label: string; color: string; badge?: string }
 
 const baseNav: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', color: '#3b82f6' },
@@ -15,6 +15,7 @@ const siswaTail: NavItem[] = [{ href: '/profil', label: 'Profil', color: '#5c84f
 const adminTail: NavItem[] = [
   { href: '/users', label: 'Users', color: '#eab308' },
   { href: '/laporan', label: 'Laporan', color: '#ef4444' },
+  { href: '/inventaris-lab', label: 'Inventaris Lab', color: '#38bdf8', badge: 'BARU' },
 ]
 
 interface SidebarProps {
@@ -127,6 +128,14 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
               <span style={{ fontSize: 14.5, fontWeight: 600, letterSpacing: 0.4 }}>
                 {item.label}
               </span>
+              {item.badge && (
+                <span
+                  className="ml-auto rounded-full px-2 py-0.5 text-white"
+                  style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.6, background: 'linear-gradient(135deg, #2563eb, #9333ea)' }}
+                >
+                  {item.badge}
+                </span>
+              )}
             </Link>
           )
         })}

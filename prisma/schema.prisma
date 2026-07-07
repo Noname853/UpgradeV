@@ -94,6 +94,43 @@ model Peminjaman {
   @@map("peminjamans")
 }
 
+// ============================================================================
+// Inventaris Lab: sensus kondisi & stok per lab (dari file Excel RData_Base),
+// terpisah total dari sistem unit-berkode yang bisa dipinjam. Data hidup di
+// database; file Excel hanya bahan impor yang dicerna lalu dibuang.
+// ============================================================================
+
+model LabSheet {
+  id     Int    @id @default(autoincrement())
+  nama   String @unique // "Lab-1", "Kaprok", "Need", ...
+  jenis  String @default("lab") // lab (jumlah/baik/rusak) | need (request barang)
+  urutan Int    @default(0)
+
+  items LabItem[]
+
+  @@map("lab_sheets")
+}
+
+model LabItem {
+  id        Int      @id @default(autoincrement())
+  sheetId   Int      @map("sheet_id")
+  nama      String
+  jumlah    String   @default("") // teks bebas: "19", "6 DUS", "25 KOTAK"
+  baik      Int?
+  rusak     Int?
+  deskripsi String?
+  link      String? // khusus jenis need (https)
+  foto      String? // URL https, pola sama dengan Alat.foto
+  urutan    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sheet LabSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId, urutan])
+  @@map("lab_items")
+}
+
 model PeminjamanDetail {
   id           Int      @id @default(autoincrement())
   peminjamanId Int      @map("peminjaman_id")

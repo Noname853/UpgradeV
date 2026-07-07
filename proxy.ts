@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 
-const protectedPaths = ['/dashboard', '/alat', '/peminjaman', '/users', '/laporan']
+const protectedPaths = ['/dashboard', '/alat', '/peminjaman', '/users', '/laporan', '/inventaris-lab']
 const authPaths = ['/login', '/register']
 
 // Bangun Content-Security-Policy berbasis nonce per-request.
