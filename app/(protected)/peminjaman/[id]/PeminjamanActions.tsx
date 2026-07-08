@@ -32,14 +32,12 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
   // Verifikasi fisik via scan QR: unit harus discan satu per satu sebelum
   // pengembalian bisa diproses — barang tertukar ketahuan di sini.
   const [verified, setVerified] = useState<Set<number>>(new Set())
-  const [skipReason, setSkipReason] = useState('')
   const [scanMsg, setScanMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
   function openReturn() {
     setRusak({})
     setCatatan('')
     setVerified(new Set())
-    setSkipReason('')
     setScanMsg(null)
     setReturnOpen(true)
   }
@@ -61,12 +59,6 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
     }
     setVerified((prev) => new Set(prev).add(unit.unitId))
     setScanMsg({ kind: 'ok', text: `${unit.kode} cocok — ${unit.nama} terverifikasi kembali.` })
-  }
-
-  function skipScan() {
-    const alasan = prompt('Alasan memproses tanpa scan lengkap (wajib):')
-    if (!alasan || !alasan.trim()) return
-    setSkipReason(alasan.trim())
   }
 
   // Alat scan fisik (mode HID keyboard) mengetik kode + Enter dengan jeda
@@ -131,16 +123,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
       unitId: Number(unitId),
       catatan: cat.trim() || undefined,
     }))
-    // Alasan skip ikut tercatat di catatan pengembalian agar terlihat di
-    // riwayat (dan di banner siswa) — bukan jalan pintas diam-diam.
-    const catatanFinal = [
-      catatan.trim(),
-      skipReason ? `[Diproses tanpa scan lengkap — alasan: ${skipReason}]` : '',
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .slice(0, 500)
-    doAction('return', { catatan: catatanFinal || undefined, kerusakan })
+    doAction('return', { catatan: catatan.trim() || undefined, kerusakan })
   }
 
   const canVerify = isAdmin && status === 'menunggu_verifikasi'
@@ -246,7 +229,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
             <div className="mb-3 flex max-h-[34vh] flex-col gap-2 overflow-y-auto">
               {units.map((u) => {
                 const isVerified = verified.has(u.unitId)
-                const rusakAllowed = isVerified || !!skipReason
+                const rusakAllowed = isVerified
                 const checked = u.unitId in rusak
                 return (
                   <div
@@ -355,27 +338,6 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </p>
             )}
 
-            {skipReason && (
-              <p
-                className="mb-3 px-3 py-2 text-[12px] leading-relaxed hud-clip-sm"
-                style={{ color: '#fbbf24', background: 'rgba(234,179,8,0.07)', border: '1px solid rgba(234,179,8,0.35)' }}
-              >
-                ⚠️ Diproses tanpa verifikasi scan lengkap — alasan: <b>{skipReason}</b>. Tercatat di catatan
-                pengembalian.
-              </p>
-            )}
-
-            {verified.size < units.length && !skipReason && (
-              <button
-                type="button"
-                onClick={skipScan}
-                className="mb-3 text-[11.5px] underline"
-                style={{ color: '#6b7785' }}
-              >
-                Proses tanpa scan lengkap…
-              </button>
-            )}
-
             <div className="flex gap-2.5">
               <button
                 onClick={() => setReturnOpen(false)}
@@ -387,10 +349,10 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </button>
               <button
                 onClick={submitReturn}
-                disabled={!!loading || (verified.size < units.length && !skipReason)}
+                disabled={!!loading || verified.size < units.length}
                 className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
                 style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.12)', border: '1px solid rgba(92,132,255,0.3)' }}
-                title={verified.size < units.length && !skipReason ? 'Scan semua unit dulu' : undefined}
+                title={verified.size < units.length ? 'Scan semua unit dulu' : undefined}
               >
                 {loading === 'return' ? 'Memproses...' : 'Proses Pengembalian'}
               </button>
