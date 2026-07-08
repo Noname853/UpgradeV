@@ -7,7 +7,7 @@ import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check, Sc
 import Link from 'next/link'
 import { ScanQrDialog, type ScannedUnit } from '@/components/peminjaman/ScanQrDialog'
 
-const JAM_BUKA = 7
+const JAM_BUKA = 6
 const JAM_TUTUP = 17
 const HARI_OPERASIONAL = [1, 2, 3, 4, 5, 6]
 const NAMA_HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
@@ -307,7 +307,7 @@ export default function BuatPeminjamanPage() {
               Pengajuan pinjaman tidak tersedia saat ini
             </p>
             <p className="mt-0.5 text-[13px]" style={{ color: '#eab308' }}>
-              Pengajuan hanya dapat dilakukan pada <strong>Senin–Sabtu, 07:00–17:00</strong>.
+              Pengajuan hanya dapat dilakukan pada <strong>Senin–Sabtu, 06:00–17:00</strong>.
             </p>
           </div>
         </div>
