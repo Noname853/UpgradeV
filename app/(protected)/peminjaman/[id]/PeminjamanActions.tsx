@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle, RotateCcw, XCircle, AlertTriangle, Keyboard, Check } from 'lucide-react'
+import { CheckCircle, RotateCcw, XCircle, AlertTriangle, Check } from 'lucide-react'
 import { QrCameraBox } from '@/components/shared/QrCameraBox'
 
 interface UnitItem {
@@ -33,7 +33,6 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
   // pengembalian bisa diproses — barang tertukar ketahuan di sini.
   const [verified, setVerified] = useState<Set<number>>(new Set())
   const [skipReason, setSkipReason] = useState('')
-  const [scanInput, setScanInput] = useState('')
   const [scanMsg, setScanMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
   function openReturn() {
@@ -41,7 +40,6 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
     setCatatan('')
     setVerified(new Set())
     setSkipReason('')
-    setScanInput('')
     setScanMsg(null)
     setReturnOpen(true)
   }
@@ -70,6 +68,36 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
     if (!alasan || !alasan.trim()) return
     setSkipReason(alasan.trim())
   }
+
+  // Alat scan fisik (mode HID keyboard) mengetik kode + Enter dengan jeda
+  // antar-tombol < ~100ms. Dengarkan global saat dialog terbuka dan terima
+  // hanya rentetan berkecepatan mesin — ketikan manusia terlalu lambat, jadi
+  // tidak ada jalur ketik manual (input & tombol Scan sudah dihapus).
+  const handleScanRef = useRef(handleScanCode)
+  useEffect(() => {
+    handleScanRef.current = handleScanCode
+  })
+  useEffect(() => {
+    if (!returnOpen) return
+    let buffer = ''
+    let lastAt = 0
+    function onKey(e: KeyboardEvent) {
+      // Abaikan bila fokus di textarea catatan (biar admin bisa mengetik biasa).
+      const tag = (e.target as HTMLElement | null)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      const now = Date.now()
+      if (now - lastAt > 100) buffer = ''
+      lastAt = now
+      if (e.key === 'Enter') {
+        if (buffer.length >= 2) handleScanRef.current(buffer)
+        buffer = ''
+        return
+      }
+      if (e.key.length === 1) buffer += e.key
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [returnOpen])
 
   async function doAction(action: string, body: Record<string, unknown> = {}) {
     setLoading(action)
@@ -286,63 +314,28 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               })}
             </div>
 
-            {/* strip scan: kamera + input alat scan fisik */}
-            <div className="mb-3 flex gap-2.5">
-              <div className="w-[110px] shrink-0">
-                <QrCameraBox onCode={handleScanCode} height={84} />
+            {/* Kamera QR di tengah (alat scan fisik tetap jalan via listener HID) */}
+            <div className="mb-3 flex flex-col items-center">
+              <div className="w-full max-w-[240px]">
+                <QrCameraBox onCode={handleScanCode} height={200} />
               </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <form
-                  className="flex gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    handleScanCode(scanInput)
-                    setScanInput('')
-                  }}
+              <p className="mt-2 text-center text-[11px]" style={{ color: '#6b7785' }}>
+                Arahkan kamera ke stiker QR — alat scan fisik juga langsung terbaca
+              </p>
+              {scanMsg && (
+                <p
+                  className="mt-2 w-full px-2.5 py-1.5 text-center text-[11.5px] leading-snug hud-clip-sm"
+                  role="status"
+                  aria-live="polite"
+                  style={
+                    scanMsg.kind === 'ok'
+                      ? { color: '#4ade80', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }
+                      : { color: '#fca5a5', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }
+                  }
                 >
-                  <div className="relative min-w-0 flex-1">
-                    <Keyboard className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: '#5d717d' }} />
-                    <input
-                      value={scanInput}
-                      onChange={(e) => setScanInput(e.target.value)}
-                      maxLength={64}
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder="Alat scan / ketik kode + Enter"
-                      className="w-full py-2 pl-8 pr-2.5 text-[12px] hud-clip-sm"
-                      style={{
-                        color: '#e8edf2',
-                        background: 'rgba(0,0,0,0.25)',
-                        border: '1px solid rgba(99,102,241,0.3)',
-                        fontFamily: 'var(--font-geist-mono), monospace',
-                      }}
-                      aria-label="Kode unit"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={!scanInput.trim()}
-                    className="shrink-0 px-3 text-[12px] font-semibold hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
-                    style={{ color: '#5c84ff', border: '1px solid rgba(92,132,255,0.35)' }}
-                  >
-                    Scan
-                  </button>
-                </form>
-                {scanMsg && (
-                  <p
-                    className="px-2.5 py-1.5 text-[11.5px] leading-snug hud-clip-sm"
-                    role="status"
-                    aria-live="polite"
-                    style={
-                      scanMsg.kind === 'ok'
-                        ? { color: '#4ade80', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }
-                        : { color: '#fca5a5', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }
-                    }
-                  >
-                    {scanMsg.text}
-                  </p>
-                )}
-              </div>
+                  {scanMsg.text}
+                </p>
+              )}
             </div>
 
             <input
