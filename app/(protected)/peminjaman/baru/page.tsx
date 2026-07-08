@@ -65,7 +65,6 @@ export default function BuatPeminjamanPage() {
   const router = useRouter()
   const [items, setItems] = useState<Item[]>([])
   const [keperluan, setKeperluan] = useState('')
-  const [tanggalBatas, setTanggalBatas] = useState('')
   const [catatan, setCatatan] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -241,7 +240,6 @@ export default function BuatPeminjamanPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         keperluan,
-        tanggalBatasKembali: tanggalBatas || null,
         catatan: catatan || null,
         items: items.map((it) => ({
           unitIds: it.selectedUnitIds,
@@ -550,13 +548,16 @@ export default function BuatPeminjamanPage() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px]" style={{ color: '#b3bdc7' }}>Batas Kembali</label>
-                  <input
-                    type="date"
-                    value={tanggalBatas}
-                    onChange={(e) => setTanggalBatas(e.target.value)}
-                    className="hud-input w-full px-3 py-2.5 text-[14px]"
-                    style={{ color: '#c3ccd6', colorScheme: 'dark' }}
-                  />
+                  <div
+                    className="hud-input flex w-full items-center gap-2 px-3 py-2.5 text-[14px]"
+                    style={{ color: '#c3ccd6' }}
+                  >
+                    <Clock size={15} style={{ color: '#8b98a5' }} />
+                    <span>Hari ini pukul {String(JAM_TUTUP).padStart(2, '0')}:00</span>
+                  </div>
+                  <p className="mt-1 text-[12px]" style={{ color: '#8b98a5' }}>
+                    Alat wajib dikembalikan paling lambat pukul {String(JAM_TUTUP).padStart(2, '0')}:00 di hari yang sama.
+                  </p>
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px]" style={{ color: '#b3bdc7' }}>Catatan</label>

@@ -7,13 +7,30 @@ import { z } from 'zod'
 
 const AKTIF = ['menunggu_verifikasi', 'dipinjam']
 
+// Batas kembali tidak lagi dipilih siswa: alat dipinjam dalam jam operasional
+// (06:00–17:00) dan wajib dikembalikan paling lambat pukul 17:00 di hari yang
+// sama. Nilai ini dihitung di server agar tidak bisa diakali dari client.
+const JAM_TUTUP = 17 // 17:00 WIB
+const WIB_OFFSET = 7 // Asia/Jakarta = UTC+7, tanpa DST
+
+function batasKembaliHariIni(): Date {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const y = parts.find((p) => p.type === 'year')!.value
+  const m = parts.find((p) => p.type === 'month')!.value
+  const d = parts.find((p) => p.type === 'day')!.value
+  // 17:00 WIB = (17 - 7):00 UTC = 10:00 UTC pada tanggal yang sama.
+  const jamUtc = String(JAM_TUTUP - WIB_OFFSET).padStart(2, '0')
+  return new Date(`${y}-${m}-${d}T${jamUtc}:00:00.000Z`)
+}
+
 const peminjamanCreateSchema = z
   .object({
     keperluan: z.string().trim().min(1, 'Keperluan wajib diisi').max(500),
-    tanggalBatasKembali: z.preprocess(
-      (v) => (v === '' || v == null ? null : v),
-      z.coerce.date().nullable(),
-    ),
     catatan: z.preprocess((v) => (v === '' || v == null ? null : v), z.string().max(1000).nullable()),
     items: z
       .array(
@@ -92,7 +109,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 })
     }
-    const { keperluan, tanggalBatasKembali, catatan, items } = parsed.data
+    const { keperluan, catatan, items } = parsed.data
     const userId = parseInt(session.user.id)
 
     if (!Number.isFinite(userId) || userId <= 0) {
@@ -158,7 +175,7 @@ export async function POST(req: NextRequest) {
           keperluan,
           catatan: catatan ?? null,
           tanggalPinjam: new Date(),
-          tanggalBatasKembali: tanggalBatasKembali ?? null,
+          tanggalBatasKembali: batasKembaliHariIni(),
           status: 'menunggu_verifikasi',
           details: {
             create: allUnitIds.map((uid) => ({
