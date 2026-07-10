@@ -145,9 +145,29 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
 
   const canVerify = isAdmin && status === 'menunggu_verifikasi'
   const canReturn = isAdmin && status === 'dipinjam'
-  const canCancel = (isAdmin || isOwner) && ['menunggu_verifikasi', 'dipinjam'].includes(status)
+  // Siswa hanya boleh membatalkan sebelum pengambilan. Setelah `dipinjam`
+  // (barang di tangan siswa) hanya admin yang boleh membatalkan.
+  const canCancel =
+    status === 'menunggu_verifikasi'
+      ? isAdmin || isOwner
+      : status === 'dipinjam'
+        ? isAdmin
+        : false
 
   if (!canVerify && !canReturn && !canCancel) return null
+
+  function handleCancel() {
+    // Pinjaman aktif (`dipinjam`) dibatalkan admin: wajib alasan (jejak audit).
+    if (status === 'dipinjam') {
+      const alasan = prompt('Alasan membatalkan peminjaman yang sedang berjalan (wajib):')
+      if (!alasan || !alasan.trim()) return
+      doAction('cancel', { alasan: alasan.trim() })
+      return
+    }
+    // Batal sebelum pengambilan: alasan opsional.
+    const alasan = prompt('Alasan pembatalan (opsional):') ?? ''
+    doAction('cancel', { alasan })
+  }
 
   const rusakCount = Object.keys(rusak).length
 
@@ -187,10 +207,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
         )}
         {canCancel && (
           <button
-            onClick={() => {
-              const alasan = prompt('Alasan pembatalan (opsional):') ?? ''
-              doAction('cancel', { alasan })
-            }}
+            onClick={handleCancel}
             disabled={loading === 'cancel'}
             className="flex w-full items-center gap-2.5 px-3.5 py-3 text-[13.5px] font-semibold transition hud-clip-sm disabled:opacity-60"
             style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}

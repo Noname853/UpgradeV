@@ -28,13 +28,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!['menunggu_verifikasi', 'dipinjam'].includes(peminjaman.status))
       return NextResponse.json({ error: 'Status tidak dapat dibatalkan' }, { status: 400 })
 
+    // Peminjaman `dipinjam` = barang fisik sudah di tangan siswa. Membatalkannya
+    // melepas unit & menghapus jejak pinjaman -> celah. Karena itu:
+    //  - siswa hanya boleh membatalkan SEBELUM pengambilan (menunggu_verifikasi);
+    //  - membatalkan pinjaman aktif hanya admin, DAN wajib beralasan (jejak audit).
+    const alasan = typeof body.alasan === 'string' ? body.alasan.trim() : ''
+    if (peminjaman.status === 'dipinjam') {
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'Alat sudah dipinjam — tidak bisa dibatalkan, harus dikembalikan ke admin.' },
+          { status: 403 },
+        )
+      }
+      if (!alasan) {
+        return NextResponse.json(
+          { error: 'Alasan wajib diisi untuk membatalkan peminjaman yang sedang berjalan' },
+          { status: 400 },
+        )
+      }
+    }
+
     const updated = await prisma.peminjaman.update({
       where: { id: numId },
       data: {
         status: 'dibatalkan',
         tanggalBatal: new Date(),
         cancelledBy: parseInt(session.user.id),
-        alasanPembatalan: body.alasan ?? null,
+        alasanPembatalan: alasan || null,
       },
     })
 
