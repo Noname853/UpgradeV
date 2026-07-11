@@ -1,0 +1,17 @@
+# Caddyfile — reverse proxy + HTTPS otomatis untuk Inventaris TKJ.
+# Salin ke /etc/caddy/Caddyfile di server, ganti domain, lalu:
+#   sudo systemctl reload caddy
+#
+# Caddy otomatis mengambil & memperbarui sertifikat TLS dari Let's Encrypt,
+# dan mengalihkan HTTP -> HTTPS. Syarat: record DNS A/AAAA domain sudah
+# mengarah ke IP publik server INI, dan port 80 & 443 terbuka.
+
+inventaris.contoh.sch.id {
+    encode gzip
+
+    # Aplikasi berjalan di container, port-nya diikat ke localhost host
+    # (lihat docker-compose.yml: 127.0.0.1:3000). Caddy meneruskan ke sana
+    # dan otomatis menambahkan header X-Forwarded-Proto=https yang dipercaya
+    # NextAuth (AUTH_TRUST_HOST=true).
+    reverse_proxy 127.0.0.1:3000
+}

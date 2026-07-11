@@ -36,8 +36,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Prisma generated client is embedded in the standalone output; migrations
-# must be run separately before starting (e.g. via an init container or
-# the deploy command in your CI: `prisma migrate deploy`).
+# must be run separately before starting (e.g. via the `migrate` service in
+# docker-compose.yml, or `prisma migrate deploy` in your CI).
+
+# Direktori data untuk SQLite lokal saat self-host (di-mount sebagai volume).
+# Harus milik user runtime (uid 1001) agar SQLite bisa menulis file WAL.
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 
 USER nextjs
 EXPOSE 3000
