@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { isSameOrigin } from '@/lib/csrf'
-import { getBookingDibuka, bolehAjukan } from '@/lib/pengaturan'
+import { getBookingDibuka, bolehAjukan, dalamJamOperasional, JAM_BUKA, JAM_TUTUP } from '@/lib/pengaturan'
 import { z } from 'zod'
 
 const AKTIF = ['menunggu_verifikasi', 'dipinjam']
@@ -11,7 +11,6 @@ const AKTIF = ['menunggu_verifikasi', 'dipinjam']
 // Batas kembali tidak lagi dipilih siswa: alat dipinjam dalam jam operasional
 // (06:00–17:00) dan wajib dikembalikan paling lambat pukul 17:00 di hari yang
 // sama. Nilai ini dihitung di server agar tidak bisa diakali dari client.
-const JAM_TUTUP = 17 // 17:00 WIB
 const WIB_OFFSET = 7 // Asia/Jakarta = UTC+7, tanpa DST
 
 function batasKembaliHariIni(): Date {
@@ -116,14 +115,17 @@ export async function POST(req: NextRequest) {
     const { keperluan, catatan, items } = parsed.data
     const userId = parseInt(session.user.id)
 
-    // Gate buka/tutup: saat ditutup, tolak pengajuan yang memuat unit hasil
-    // "pilih dari daftar". Scan QR (viaScan) tetap boleh kapan saja.
-    const bookingDibuka = await getBookingDibuka()
+    // Gate buka/tutup: pengajuan "pilih dari daftar" butuh saklar admin
+    // terbuka DAN dalam jam operasional. Di luar itu, hanya unit hasil scan
+    // QR (viaScan) yang boleh — sudah membuktikan kehadiran fisik di lab.
+    const manualDibuka = await getBookingDibuka()
+    const jamOperasional = dalamJamOperasional()
+    const bookingDibuka = manualDibuka && jamOperasional
     if (!bolehAjukan(bookingDibuka, items)) {
-      return NextResponse.json(
-        { error: 'Pendaftaran via pilih daftar sedang ditutup. Silakan pinjam dengan scan QR unit di lab.' },
-        { status: 403 },
-      )
+      const error = !jamOperasional
+        ? `Di luar jam operasional peminjaman (${JAM_BUKA}:00–${JAM_TUTUP}:00 WIB). Silakan ajukan besok, atau pinjam dengan scan QR unit di lab.`
+        : 'Pendaftaran via pilih daftar sedang ditutup. Silakan pinjam dengan scan QR unit di lab.'
+      return NextResponse.json({ error }, { status: 403 })
     }
 
     if (!Number.isFinite(userId) || userId <= 0) {

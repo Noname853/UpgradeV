@@ -9,6 +9,7 @@ import { ScanQrDialog, type ScannedUnit } from '@/components/peminjaman/ScanQrDi
 
 // Batas kembali tetap pukul 17:00 (dihitung ulang di server). Konstanta ini
 // hanya untuk label di form.
+const JAM_BUKA = 6
 const JAM_TUTUP = 17
 
 interface AlatOption {
@@ -55,6 +56,7 @@ export default function BuatPeminjamanPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [bookingDibuka, setBookingDibuka] = useState<boolean | null>(null)
+  const [jamOperasional, setJamOperasional] = useState(true)
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
   const [scanOpen, setScanOpen] = useState(false)
@@ -94,7 +96,10 @@ export default function BuatPeminjamanPage() {
   useEffect(() => {
     fetch('/api/pengaturan')
       .then((r) => r.json())
-      .then((d) => setBookingDibuka(Boolean(d.bookingDibuka)))
+      .then((d) => {
+        setBookingDibuka(Boolean(d.bookingDibuka))
+        setJamOperasional(d.dalamJamOperasional !== false)
+      })
       .catch(() => setBookingDibuka(true))
   }, [])
 
@@ -275,7 +280,7 @@ export default function BuatPeminjamanPage() {
                 boxShadow: `0 0 8px ${bookingDibuka ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'}`,
               }}
             />
-            {bookingDibuka ? 'Booking dibuka' : 'Pilih daftar ditutup'}
+            {bookingDibuka ? 'Booking dibuka' : jamOperasional ? 'Pilih daftar ditutup' : 'Di luar jam operasional'}
           </div>
         )}
       </div>
@@ -291,7 +296,9 @@ export default function BuatPeminjamanPage() {
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" style={{ color: '#eab308' }} />
           <div>
             <p className="text-[14px] font-semibold" style={{ color: '#fde68a' }}>
-              Pendaftaran via pilih daftar sedang ditutup
+              {jamOperasional
+                ? 'Pendaftaran via pilih daftar sedang ditutup'
+                : `Di luar jam operasional (${String(JAM_BUKA).padStart(2, '0')}:00–${String(JAM_TUTUP).padStart(2, '0')}:00)`}
             </p>
             <p className="mt-0.5 text-[13px]" style={{ color: '#eab308' }}>
               Kamu masih bisa meminjam dengan <strong>scan QR unit</strong> langsung di lab.

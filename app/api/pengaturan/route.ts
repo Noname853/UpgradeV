@@ -2,18 +2,21 @@ import { auth } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { isSameOrigin } from '@/lib/csrf'
-import { getBookingDibuka, setBookingDibuka } from '@/lib/pengaturan'
+import { getBookingDibuka, setBookingDibuka, dalamJamOperasional } from '@/lib/pengaturan'
 import { z } from 'zod'
 
 // Status buka/tutup booking. Dibaca semua user login (siswa perlu tahu apakah
-// boleh mengajukan lewat "pilih dari daftar").
+// boleh mengajukan lewat "pilih dari daftar"). `bookingDibuka` di sini sudah
+// gabungan saklar admin + jam operasional — `dalamJamOperasional` dikirim
+// terpisah supaya UI bisa bedakan pesan "ditutup admin" vs "di luar jam".
 export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const bookingDibuka = await getBookingDibuka()
-    return NextResponse.json({ bookingDibuka })
+    const manualDibuka = await getBookingDibuka()
+    const jamOperasional = dalamJamOperasional()
+    return NextResponse.json({ bookingDibuka: manualDibuka && jamOperasional, dalamJamOperasional: jamOperasional })
   } catch (err) {
     logger.error({ err }, '[GET /api/pengaturan]')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

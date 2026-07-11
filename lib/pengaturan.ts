@@ -1,6 +1,24 @@
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
+export const JAM_BUKA = 6 // 06:00 WIB
+export const JAM_TUTUP = 17 // 17:00 WIB
+
+// Jam operasional lab, dicek server-side (bukan cuma UI seperti versi lama).
+// Dipakai BARENG saklar admin: pengajuan pilih-dari-daftar butuh keduanya —
+// saklar terbuka DAN sedang dalam jam ini. Scan QR tetap terkecuali (lihat
+// bolehAjukan) karena sudah membuktikan kehadiran fisik di lab.
+export function dalamJamOperasional(now: Date = new Date()): boolean {
+  const jam = Number(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Jakarta',
+      hour: 'numeric',
+      hourCycle: 'h23',
+    }).format(now),
+  )
+  return jam >= JAM_BUKA && jam < JAM_TUTUP
+}
+
 // Setelan disimpan sebagai baris tunggal. Bila belum ada baris (fresh DB),
 // default aman = booking terbuka. Query dibungkus try/catch agar tabel yang
 // belum sempat dibuat (mis. sesaat setelah deploy sebelum startup-migrations
