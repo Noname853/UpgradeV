@@ -79,10 +79,7 @@ export default function BuatPeminjamanPage() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (!searchOpen || !searchQuery) {
-      setDropdownPos(null)
-      return
-    }
+    if (!searchOpen || !searchQuery) return
     function updatePos() {
       const el = searchInputRef.current
       if (!el) return
@@ -95,6 +92,8 @@ export default function BuatPeminjamanPage() {
     return () => {
       window.removeEventListener('scroll', updatePos, true)
       window.removeEventListener('resize', updatePos)
+      // Sembunyikan dropdown saat search ditutup / query kosong (dep berubah).
+      setDropdownPos(null)
     }
   }, [searchOpen, searchQuery])
 
@@ -111,8 +110,10 @@ export default function BuatPeminjamanPage() {
   }, [searchOpen])
 
   useEffect(() => {
-    setStatusWaktu(cekJamOperasional())
-    const interval = setInterval(() => setStatusWaktu(cekJamOperasional()), 60_000)
+    // Waktu dihitung di klien (hindari mismatch hidrasi), lalu diperbarui tiap menit.
+    const tick = () => setStatusWaktu(cekJamOperasional())
+    tick()
+    const interval = setInterval(tick, 60_000)
     return () => clearInterval(interval)
   }, [])
 

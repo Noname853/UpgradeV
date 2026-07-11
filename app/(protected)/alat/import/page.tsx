@@ -340,7 +340,7 @@ export default async function ImportAlatPage({
           </p>
 
           <div className="mb-3 hud-clip-sm p-2.5" style={{ border: '1px solid rgba(99,102,241,0.16)' }}>
-            <p className="mb-2 text-[11px] font-bold" style={{ color: '#9bb3ff', letterSpacing: 1 }}>SHEET "ALAT" — jenis alat</p>
+            <p className="mb-2 text-[11px] font-bold" style={{ color: '#9bb3ff', letterSpacing: 1 }}>SHEET &quot;ALAT&quot; — jenis alat</p>
             <div className="flex flex-col gap-[6px] text-xs">
               <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>nama</span><span style={{ color: '#6b7785' }}>wajib, unik</span></div>
               <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kategori</span><span style={{ color: '#6b7785' }}>wajib</span></div>
@@ -350,7 +350,7 @@ export default async function ImportAlatPage({
           </div>
 
           <div className="hud-clip-sm p-2.5" style={{ border: '1px solid rgba(99,102,241,0.16)' }}>
-            <p className="mb-2 text-[11px] font-bold" style={{ color: '#9bb3ff', letterSpacing: 1 }}>SHEET "UNIT" — unit fisik per alat</p>
+            <p className="mb-2 text-[11px] font-bold" style={{ color: '#9bb3ff', letterSpacing: 1 }}>SHEET &quot;UNIT&quot; — unit fisik per alat</p>
             <div className="flex flex-col gap-[6px] text-xs">
               <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>kode</span><span style={{ color: '#6b7785' }}>wajib, unik</span></div>
               <div className="flex items-center gap-2"><span className="px-2 py-0.5 font-mono" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}>nama_alat</span><span style={{ color: '#6b7785' }}>wajib, harus cocok dgn sheet Alat</span></div>
