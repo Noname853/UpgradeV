@@ -5,17 +5,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
-  // Saat build `standalone` (Docker), jejak file otomatis Next kadang gagal
-  // mengikuti binding native @libsql/libsql (di-require dinamis berdasarkan
-  // platform). Tanpa ini, koneksi ke SQLite lokal via `file:` gagal saat
-  // runtime di container. Glob yang tidak cocok akan diabaikan (mis. di Vercel
-  // yang memakai libSQL remote lewat HTTP client murni-JS).
-  outputFileTracingIncludes: {
-    '/**/*': [
-      './node_modules/@libsql/**/*',
-      './node_modules/libsql/**/*',
-    ],
-  },
+  // HANYA saat build `standalone` (Docker): jejak file otomatis Next kadang
+  // gagal mengikuti binding native @libsql/libsql (di-require dinamis
+  // berdasarkan platform), sehingga koneksi ke SQLite lokal via `file:` gagal
+  // saat runtime di container. Di Vercel opsi ini TIDAK aktif — deploy Vercel
+  // pakai libSQL remote lewat HTTP client (murni-JS, tak butuh binding native).
+  outputFileTracingIncludes:
+    process.env.DOCKER_BUILD === 'true'
+      ? { '/**/*': ['./node_modules/@libsql/**/*', './node_modules/libsql/**/*'] }
+      : undefined,
   allowedDevOrigins: [
     '192.168.*.*',
     '10.*.*.*',
