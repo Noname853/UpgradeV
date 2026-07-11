@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { isSameOrigin } from '@/lib/csrf'
+import { getBookingDibuka, bolehAjukan } from '@/lib/pengaturan'
 import { z } from 'zod'
 
 const AKTIF = ['menunggu_verifikasi', 'dipinjam']
@@ -42,6 +43,9 @@ const peminjamanCreateSchema = z
               (v) => (v === '' || v == null ? null : v),
               z.string().max(500).nullable(),
             ),
+            // Asal input: true = hasil scan QR unit di lab. Dipakai gate buka/tutup
+            // booking (saat ditutup, hanya unit hasil scan yang boleh diajukan).
+            viaScan: z.boolean().optional().default(false),
           })
           .strict(),
       )
@@ -111,6 +115,16 @@ export async function POST(req: NextRequest) {
     }
     const { keperluan, catatan, items } = parsed.data
     const userId = parseInt(session.user.id)
+
+    // Gate buka/tutup: saat ditutup, tolak pengajuan yang memuat unit hasil
+    // "pilih dari daftar". Scan QR (viaScan) tetap boleh kapan saja.
+    const bookingDibuka = await getBookingDibuka()
+    if (!bolehAjukan(bookingDibuka, items)) {
+      return NextResponse.json(
+        { error: 'Pendaftaran via pilih daftar sedang ditutup. Silakan pinjam dengan scan QR unit di lab.' },
+        { status: 403 },
+      )
+    }
 
     if (!Number.isFinite(userId) || userId <= 0) {
       return NextResponse.json({ error: 'Sesi tidak valid, silakan login ulang' }, { status: 401 })

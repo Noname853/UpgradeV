@@ -131,6 +131,18 @@ model LabItem {
   @@map("lab_items")
 }
 
+// Setelan global aplikasi (baris tunggal, selalu id=1). Untuk sekarang hanya
+// menyimpan saklar buka/tutup pendaftaran peminjaman lewat "pilih dari daftar".
+// Metode scan QR unit tidak terpengaruh saklar ini.
+model Pengaturan {
+  id            Int      @id @default(autoincrement())
+  bookingDibuka Boolean  @default(true) @map("booking_dibuka")
+  diubahOleh    Int?     @map("diubah_oleh")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("pengaturan")
+}
+
 model PeminjamanDetail {
   id           Int      @id @default(autoincrement())
   peminjamanId Int      @map("peminjaman_id")

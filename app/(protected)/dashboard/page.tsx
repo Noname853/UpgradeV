@@ -1,7 +1,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ActivityChart } from '@/components/dashboard/ActivityChart'
+import { BookingToggle } from '@/components/dashboard/BookingToggle'
 import { CatatanAdminBanner } from '@/components/dashboard/CatatanAdminBanner'
+import { getBookingDibuka } from '@/lib/pengaturan'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { Clock } from 'lucide-react'
@@ -43,7 +45,7 @@ export default async function DashboardPage() {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const [totalAlat, totalUser, peminjamanAktif, menungguVerifikasi, stokRendah, dikembalikanBulanIni, recentPeminjaman, chartData] =
+    const [totalAlat, totalUser, peminjamanAktif, menungguVerifikasi, stokRendah, dikembalikanBulanIni, recentPeminjaman, chartData, bookingDibuka] =
       await Promise.all([
         prisma.alat.count(),
         prisma.user.count({ where: { role: 'siswa' } }),
@@ -58,6 +60,7 @@ export default async function DashboardPage() {
           include: { user: { select: { name: true } }, details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
         }),
         getChartData(),
+        getBookingDibuka(),
       ])
 
     const stats = [
@@ -77,6 +80,9 @@ export default async function DashboardPage() {
             Selamat datang, {session?.user.name}
           </p>
         </div>
+
+        {/* saklar buka/tutup booking */}
+        <BookingToggle initial={bookingDibuka} />
 
         {/* stat grid */}
         <div

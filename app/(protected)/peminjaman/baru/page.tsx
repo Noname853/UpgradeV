@@ -7,27 +7,9 @@ import { Plus, Trash2, ArrowLeft, Search, Clock, AlertTriangle, Users, Check, Sc
 import Link from 'next/link'
 import { ScanQrDialog, type ScannedUnit } from '@/components/peminjaman/ScanQrDialog'
 
-const JAM_BUKA = 6
+// Batas kembali tetap pukul 17:00 (dihitung ulang di server). Konstanta ini
+// hanya untuk label di form.
 const JAM_TUTUP = 17
-const HARI_OPERASIONAL = [1, 2, 3, 4, 5, 6]
-const NAMA_HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-
-function cekJamOperasional() {
-  const now = new Date()
-  const hari = now.getDay()
-  const jam = now.getHours()
-  const menit = now.getMinutes()
-  const waktuMenit = jam * 60 + menit
-  const boleh =
-    HARI_OPERASIONAL.includes(hari) &&
-    waktuMenit >= JAM_BUKA * 60 &&
-    waktuMenit < JAM_TUTUP * 60
-  return {
-    boleh,
-    waktuSekarang: `${String(jam).padStart(2, '0')}:${String(menit).padStart(2, '0')}`,
-    hariSekarang: NAMA_HARI[hari],
-  }
-}
 
 interface AlatOption {
   id: number
@@ -72,7 +54,7 @@ export default function BuatPeminjamanPage() {
   const [searchResults, setSearchResults] = useState<AlatOption[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusWaktu, setStatusWaktu] = useState<ReturnType<typeof cekJamOperasional> | null>(null)
+  const [bookingDibuka, setBookingDibuka] = useState<boolean | null>(null)
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
   const [scanOpen, setScanOpen] = useState(false)
@@ -110,11 +92,10 @@ export default function BuatPeminjamanPage() {
   }, [searchOpen])
 
   useEffect(() => {
-    // Waktu dihitung di klien (hindari mismatch hidrasi), lalu diperbarui tiap menit.
-    const tick = () => setStatusWaktu(cekJamOperasional())
-    tick()
-    const interval = setInterval(tick, 60_000)
-    return () => clearInterval(interval)
+    fetch('/api/pengaturan')
+      .then((r) => r.json())
+      .then((d) => setBookingDibuka(Boolean(d.bookingDibuka)))
+      .catch(() => setBookingDibuka(true))
   }, [])
 
   useEffect(() => {
@@ -234,6 +215,10 @@ export default function BuatPeminjamanPage() {
     if (items.length === 0) { setError('Pilih minimal 1 alat'); return }
     const empty = items.find((it) => it.selectedUnitIds.length === 0)
     if (empty) { setError(`Pilih minimal 1 unit untuk ${empty.alat.nama}`); return }
+    if (submitTerkunci) {
+      setError('Pendaftaran via pilih daftar sedang ditutup. Hapus alat non-scan atau ajukan lewat scan QR.')
+      return
+    }
 
     setLoading(true)
     const res = await fetch('/api/peminjaman', {
@@ -245,6 +230,7 @@ export default function BuatPeminjamanPage() {
         items: items.map((it) => ({
           unitIds: it.selectedUnitIds,
           keterangan: it.keterangan || null,
+          viaScan: it.scanned,
         })),
       }),
     })
@@ -257,7 +243,10 @@ export default function BuatPeminjamanPage() {
     }
   }
 
-  const diluarJam = statusWaktu !== null && !statusWaktu.boleh
+  const bookingTutup = bookingDibuka === false
+  // Saat ditutup, hanya unit hasil scan yang boleh diajukan.
+  const adaPilihNonScan = items.some((it) => !it.scanned)
+  const submitTerkunci = bookingTutup && adaPilihNonScan
   const totalUnitDipilih = items.reduce((sum, it) => sum + it.selectedUnitIds.length, 0)
 
   return (
@@ -274,7 +263,7 @@ export default function BuatPeminjamanPage() {
           <h1 className="hud-title" style={{ fontSize: 22 }}>Buat Peminjaman</h1>
           <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Pilih alat lalu pilih unit spesifik yang ingin dipinjam</p>
         </div>
-        {statusWaktu && (
+        {bookingDibuka !== null && (
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] hud-clip-sm"
             style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.2)' }}
@@ -282,17 +271,16 @@ export default function BuatPeminjamanPage() {
             <span
               className="inline-block h-1.5 w-1.5 rounded-full"
               style={{
-                background: statusWaktu.boleh ? '#22c55e' : '#ef4444',
-                boxShadow: `0 0 8px ${statusWaktu.boleh ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'}`,
+                background: bookingDibuka ? '#22c55e' : '#ef4444',
+                boxShadow: `0 0 8px ${bookingDibuka ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'}`,
               }}
             />
-            <Clock className="h-3.5 w-3.5" />
-            {statusWaktu.hariSekarang}, {statusWaktu.waktuSekarang}
+            {bookingDibuka ? 'Booking dibuka' : 'Pilih daftar ditutup'}
           </div>
         )}
       </div>
 
-      {diluarJam && (
+      {bookingTutup && (
         <div
           className="mb-4 flex items-start gap-3 px-4 py-4 hud-clip-md"
           style={{
@@ -303,10 +291,10 @@ export default function BuatPeminjamanPage() {
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" style={{ color: '#eab308' }} />
           <div>
             <p className="text-[14px] font-semibold" style={{ color: '#fde68a' }}>
-              Pengajuan pinjaman tidak tersedia saat ini
+              Pendaftaran via pilih daftar sedang ditutup
             </p>
             <p className="mt-0.5 text-[13px]" style={{ color: '#eab308' }}>
-              Pengajuan hanya dapat dilakukan pada <strong>Senin–Sabtu, 06:00–17:00</strong>.
+              Kamu masih bisa meminjam dengan <strong>scan QR unit</strong> langsung di lab.
             </p>
           </div>
         </div>
@@ -323,11 +311,12 @@ export default function BuatPeminjamanPage() {
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#5d717d' }} />
                   <input
                     ref={searchInputRef}
-                    placeholder="Cari nama alat (misal: Router, Switch)..."
+                    disabled={bookingTutup}
+                    placeholder={bookingTutup ? 'Pilih daftar ditutup — gunakan Scan QR' : 'Cari nama alat (misal: Router, Switch)...'}
                     value={searchQuery}
                     onFocus={() => setSearchOpen(true)}
                     onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
-                    className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px]"
+                    className="hud-input w-full py-2.5 pl-9 pr-3 text-[14px] disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
                 <button
@@ -615,10 +604,10 @@ export default function BuatPeminjamanPage() {
 
             <button
               type="submit"
-              disabled={loading || diluarJam || items.length === 0 || totalUnitDipilih === 0}
+              disabled={loading || submitTerkunci || items.length === 0 || totalUnitDipilih === 0}
               className="hud-btn-primary w-full px-[18px] py-3 text-[12px] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading ? 'MENGAJUKAN...' : diluarJam ? 'DI LUAR JAM OPERASIONAL' : 'AJUKAN PEMINJAMAN'}
+              {loading ? 'MENGAJUKAN...' : submitTerkunci ? 'PILIH DAFTAR DITUTUP' : 'AJUKAN PEMINJAMAN'}
             </button>
           </div>
         </div>
