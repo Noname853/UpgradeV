@@ -56,6 +56,16 @@ const ADDITIVE_STEPS: { name: string; sql: string }[] = [
     name: 'lab_items_sheet_id_urutan_idx (index)',
     sql: 'CREATE INDEX IF NOT EXISTS "lab_items_sheet_id_urutan_idx" ON "lab_items"("sheet_id", "urutan")',
   },
+  // prisma/migrations/20260711122607_add_pengaturan_booking
+  {
+    name: 'pengaturan (tabel)',
+    sql: `CREATE TABLE IF NOT EXISTS "pengaturan" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "booking_dibuka" BOOLEAN NOT NULL DEFAULT true,
+      "diubah_oleh" INTEGER,
+      "updated_at" DATETIME NOT NULL
+    )`,
+  },
 ]
 
 export async function runStartupMigrations(): Promise<void> {

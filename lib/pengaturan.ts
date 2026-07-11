@@ -1,10 +1,18 @@
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Setelan disimpan sebagai baris tunggal. Bila belum ada baris (fresh DB),
-// default aman = booking terbuka.
+// default aman = booking terbuka. Query dibungkus try/catch agar tabel yang
+// belum sempat dibuat (mis. sesaat setelah deploy sebelum startup-migrations
+// jalan) tidak menjatuhkan halaman yang memakainya — cukup default terbuka.
 export async function getBookingDibuka(): Promise<boolean> {
-  const row = await prisma.pengaturan.findFirst({ select: { bookingDibuka: true } })
-  return row?.bookingDibuka ?? true
+  try {
+    const row = await prisma.pengaturan.findFirst({ select: { bookingDibuka: true } })
+    return row?.bookingDibuka ?? true
+  } catch (err) {
+    logger.error({ err }, '[getBookingDibuka] gagal baca setelan, default terbuka')
+    return true
+  }
 }
 
 // Set status buka/tutup. Upsert baris tunggal (buat bila belum ada).
