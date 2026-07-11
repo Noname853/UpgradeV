@@ -1,7 +1,39 @@
-# Compose mempermudah build + run: cukup `docker compose up --build`.
+# Compose mempermudah build + run: cukup `docker compose up --build -d`.
 # Nilai rahasia runtime (DATABASE_URL, AUTH_SECRET, dst.) dibaca dari file
-# .env.docker di host (lihat DOCKER.md). File itu TIDAK ikut ke image/git.
+# .env.docker di host (lihat SERVER-DEPLOY.md). File itu TIDAK ikut ke image/git.
+#
+# Tiga hal penting untuk self-host dengan SQLite lokal:
+#   1. Volume `db-data` menyimpan file SQLite agar data tidak hilang saat rebuild.
+#   2. Service `migrate` menjalankan `prisma migrate deploy` SEKALI sebelum web
+#      nyala (image runner minimal tidak punya Prisma CLI).
+#   3. Port web diikat ke 127.0.0.1 — akses publik dilayani reverse proxy (Caddy).
 services:
+  # ── migrate: siapkan/rapikan skema DB di volume sebelum web start ──────────
+  migrate:
+    build:
+      context: .
+      target: builder # stage builder punya Prisma CLI + source + migrations
+      args:
+        AUTH_SECRET: build-placeholder
+        DATABASE_URL: file:./dev.db
+    image: inventaris-tkj-migrate
+    env_file:
+      - .env.docker
+    environment:
+      # Aktifkan guard seed produksi (butuh ALLOW_PROD_SEED + SEED_*_PASSWORD).
+      NODE_ENV: production
+    volumes:
+      - db-data:/app/data
+    # migrate deploy bersifat idempoten (aman diulang tiap boot), lalu serahkan
+    # kepemilikan file DB ke uid 1001 (user `nextjs` di image runner) agar
+    # SQLite bisa menulis (file .db-wal / .db-shm).
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             mkdir -p /app/data &&
+             chown -R 1001:1001 /app/data"
+    restart: "no"
+
+  # ── web: aplikasi Next.js (image runner standalone, non-root) ──────────────
   web:
     build:
       context: .
@@ -13,7 +45,17 @@ services:
     image: inventaris-tkj
     container_name: inventaris-tkj
     ports:
-      - "3000:3000"
+      # Diikat ke localhost: publik dilayani lewat Caddy (lihat SERVER-DEPLOY.md).
+      # Untuk uji lokal langsung tanpa reverse proxy, ubah jadi "3000:3000".
+      - "127.0.0.1:3000:3000"
     env_file:
       - .env.docker
+    volumes:
+      - db-data:/app/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
+
+volumes:
+  db-data:

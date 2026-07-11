@@ -3,6 +3,10 @@
 Panduan belajar Docker langkah demi langkah memakai project ini.
 Jalankan semua perintah di laptop kamu (yang sudah ter-install **Docker Desktop**).
 
+> **Mau deploy ke server Ubuntu/Debian agar bisa diakses publik (domain + HTTPS)?**
+> Lihat **[SERVER-DEPLOY.md](SERVER-DEPLOY.md)** — panduan lengkap memakai
+> SQLite lokal + Caddy. Dokumen ini fokus ke belajar Docker di laptop.
+
 ---
 
 ## 0. Apa itu Docker? (5 istilah)
@@ -42,24 +46,29 @@ Jalankan semua perintah di laptop kamu (yang sudah ter-install **Docker Desktop*
 
 ## 3. Siapkan environment runtime
 
-Buat file **`.env.docker`** di root project (otomatis di-ignore git, jadi aman):
+Salin template **`.env.docker.example`** menjadi **`.env.docker`** (otomatis
+di-ignore git, jadi aman):
 
-```env
-# Database (pakai Turso/libSQL yang sama dengan produksi, atau DB uji terpisah)
-DATABASE_URL=libsql://NAMA-DB-kamu.turso.io
-DATABASE_AUTH_TOKEN=token-turso-kamu
-
-# Wajib untuk NextAuth — buat string acak panjang:
-#   openssl rand -base64 32
-AUTH_SECRET=tempel-hasil-acak-di-sini
-AUTH_TRUST_HOST=true
-NEXTAUTH_URL=http://localhost:3000
-
-# Opsional — rate limit (kalau kosong, pakai memori per-instance)
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
+```bash
+cp .env.docker.example .env.docker
 ```
 
+Isi minimal untuk uji lokal (SQLite lokal di dalam Docker volume — default):
+
+```env
+DATABASE_URL=file:/app/data/prod.db
+AUTH_SECRET=tempel-hasil-openssl-rand-base64-32
+AUTH_TRUST_HOST=true
+NEXTAUTH_URL=http://localhost:3000
+# Untuk seed admin awal (lihat langkah migrasi):
+ALLOW_PROD_SEED=true
+SEED_ADMIN_PASSWORD=ganti-yang-kuat
+SEED_SISWA_PASSWORD=ganti-yang-kuat
+```
+
+> Alternatif: mau pakai **Turso/libSQL remote**? Ganti `DATABASE_URL` jadi
+> `libsql://NAMA-DB.turso.io` dan isi `DATABASE_AUTH_TOKEN`.
+>
 > Catatan: nilai ini diberikan saat **runtime**, bukan ter-bake ke image — itu praktik aman.
 
 ---
@@ -96,16 +105,22 @@ docker run --rm -p 3000:3000 --env-file .env.docker inventaris-tkj
 
 ---
 
-## 6. Migrasi database (penting)
+## 6. Migrasi database & seed
 
-Image `runner` minimal — tidak ada Prisma CLI di dalamnya. Jalankan migrasi
-**dari host** sebelum/sesudah container nyala, mengarah ke DB yang sama:
+Image `runner` minimal (tanpa Prisma CLI), jadi migrasi dijalankan oleh service
+**`migrate`** di `docker-compose.yml` — otomatis jalan `prisma migrate deploy`
+sekali sebelum `web` nyala (`web` menunggu `migrate` selesai). Kamu tidak perlu
+melakukan apa-apa; tabel dibuat otomatis di volume `db-data`.
+
+Untuk membuat akun admin awal (sekali saja):
 
 ```bash
-# di host (bukan di dalam container)
-npx prisma migrate deploy
+docker compose run --rm migrate \
+  sh -c "npx tsx prisma/seed.ts && chown -R 1001:1001 /app/data"
 ```
-Atau kalau pakai Turso yang sudah dimigrasi sebelumnya, tidak perlu ulang.
+
+> Kalau pakai Turso yang sudah dimigrasi sebelumnya, `migrate deploy` tetap aman
+> dijalankan (idempoten).
 
 ---
 
