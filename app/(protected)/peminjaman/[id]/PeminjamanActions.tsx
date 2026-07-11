@@ -225,10 +225,11 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
           onClick={() => !loading && setReturnOpen(false)}
         >
           <div
-            className="hud-clip-md w-full max-w-md p-5"
-            style={{ background: '#0d1520', border: '1px solid rgba(92,132,255,0.3)' }}
+            className="hud-clip-md flex w-full max-w-md flex-col"
+            style={{ background: '#0d1520', border: '1px solid rgba(92,132,255,0.3)', maxHeight: '90vh' }}
             onClick={(e) => e.stopPropagation()}
           >
+          <div className="flex-1 overflow-y-auto p-5">
             <div className="mb-3 flex items-center gap-2.5">
               <div
                 className="flex h-8 w-8 items-center justify-center hud-clip-sm"
@@ -392,27 +393,31 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
                 Proses tanpa scan lengkap…
               </button>
             )}
-
-            <div className="flex gap-2.5">
-              <button
-                onClick={() => setReturnOpen(false)}
-                disabled={!!loading}
-                className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:opacity-60"
-                style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={submitReturn}
-                disabled={!!loading || (verified.size < units.length && !skipReason)}
-                className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
-                style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.12)', border: '1px solid rgba(92,132,255,0.3)' }}
-                title={verified.size < units.length && !skipReason ? 'Scan semua unit dulu' : undefined}
-              >
-                {loading === 'return' ? 'Memproses...' : 'Proses Pengembalian'}
-              </button>
-            </div>
           </div>
+
+          <div
+            className="flex shrink-0 gap-2.5 p-5 pt-3"
+            style={{ borderTop: '1px solid rgba(99,102,241,0.15)' }}
+          >
+            <button
+              onClick={() => setReturnOpen(false)}
+              disabled={!!loading}
+              className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:opacity-60"
+              style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
+            >
+              Batal
+            </button>
+            <button
+              onClick={submitReturn}
+              disabled={!!loading || (verified.size < units.length && !skipReason)}
+              className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
+              style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.12)', border: '1px solid rgba(92,132,255,0.3)' }}
+              title={verified.size < units.length && !skipReason ? 'Scan semua unit dulu' : undefined}
+            >
+              {loading === 'return' ? 'Memproses...' : 'Proses Pengembalian'}
+            </button>
+          </div>
+        </div>
         </div>,
         document.body,
       )}
