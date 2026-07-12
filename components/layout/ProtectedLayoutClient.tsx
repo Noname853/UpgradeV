@@ -77,12 +77,7 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden print:block print:overflow-visible">
         <div className="print:hidden">
-          <Topbar
-            userName={userName}
-            userRole={userRole}
-            userKelas={userKelas}
-            onMenuToggle={() => setMobileOpen(true)}
-          />
+          <Topbar onMenuToggle={() => setMobileOpen(true)} />
         </div>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 print:overflow-visible print:p-0">{children}</main>
       </div>
