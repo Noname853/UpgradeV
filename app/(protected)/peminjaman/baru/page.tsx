@@ -254,35 +254,43 @@ export default function BuatPeminjamanPage() {
   const submitTerkunci = bookingTutup && adaPilihNonScan
   const totalUnitDipilih = items.reduce((sum, it) => sum + it.selectedUnitIds.length, 0)
 
+  const statusBadge =
+    bookingDibuka !== null ? (
+      <div
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] hud-clip-sm"
+        style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.2)' }}
+      >
+        <span
+          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{
+            background: bookingDibuka ? '#22c55e' : '#ef4444',
+            boxShadow: `0 0 8px ${bookingDibuka ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'}`,
+          }}
+        />
+        {bookingDibuka ? 'Booking dibuka' : jamOperasional ? 'Pilih daftar ditutup' : 'Di luar jam operasional'}
+      </div>
+    ) : null
+
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-center gap-3 hud-rise">
-        <Link
-          href="/peminjaman"
-          className="flex h-[38px] w-[38px] items-center justify-center hud-clip-sm"
-          style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <h1 className="hud-title" style={{ fontSize: 22 }}>Buat Peminjaman</h1>
-          <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Pilih alat lalu pilih unit spesifik yang ingin dipinjam</p>
-        </div>
-        {bookingDibuka !== null && (
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] hud-clip-sm"
-            style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.2)' }}
+      <div className="mb-5 hud-rise">
+        <div className="flex items-start gap-3">
+          <Link
+            href="/peminjaman"
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center hud-clip-sm"
+            style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }}
           >
-            <span
-              className="inline-block h-1.5 w-1.5 rounded-full"
-              style={{
-                background: bookingDibuka ? '#22c55e' : '#ef4444',
-                boxShadow: `0 0 8px ${bookingDibuka ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'}`,
-              }}
-            />
-            {bookingDibuka ? 'Booking dibuka' : jamOperasional ? 'Pilih daftar ditutup' : 'Di luar jam operasional'}
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="hud-title text-[19px] sm:text-[22px]">Buat Peminjaman</h1>
+            <p className="mt-1 text-[13px]" style={{ color: '#8a97a3' }}>Pilih alat lalu pilih unit spesifik yang ingin dipinjam</p>
           </div>
-        )}
+          {/* Layar lebar: badge di kanan atas sejajar judul */}
+          {statusBadge && <div className="ml-auto hidden shrink-0 sm:block">{statusBadge}</div>}
+        </div>
+        {/* Mobile: badge turun ke barisnya sendiri agar tidak menimpa judul */}
+        {statusBadge && <div className="mt-3 sm:hidden">{statusBadge}</div>}
       </div>
 
       {bookingTutup && (
