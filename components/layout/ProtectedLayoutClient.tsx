@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sidebar } from './Sidebar'
+import { Sidebar, type SidebarStats } from './Sidebar'
 import { Topbar } from './Topbar'
-import { X } from 'lucide-react'
 
 interface Props {
   children: React.ReactNode
@@ -14,6 +13,7 @@ interface Props {
 
 export function ProtectedLayoutClient({ children, userName, userRole, userKelas }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [stats, setStats] = useState<SidebarStats | null>(null)
 
   // close drawer on resize to desktop
   useEffect(() => {
@@ -24,6 +24,24 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
+  // ringkasan peminjaman untuk kartu statistik sidebar
+  useEffect(() => {
+    let aktif = true
+    fetch('/api/dashboard/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!aktif || !data) return
+        setStats({
+          peminjamanAktif: data.peminjamanAktif ?? 0,
+          menungguVerifikasi: data.menungguVerifikasi ?? 0,
+        })
+      })
+      .catch(() => {})
+    return () => {
+      aktif = false
+    }
+  }, [])
+
   return (
     <div
       className="hud-root flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible"
@@ -31,7 +49,7 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
     >
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0 print:hidden">
-        <Sidebar role={userRole} />
+        <Sidebar role={userRole} userName={userName} userKelas={userKelas} stats={stats} />
       </div>
 
       {/* Mobile sidebar drawer */}
@@ -43,16 +61,15 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
             onClick={() => setMobileOpen(false)}
           />
           {/* Drawer */}
-          <div className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-neutral-950 md:hidden">
-            <div className="flex h-14 items-center justify-end border-b border-neutral-800 px-4">
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg p-1.5 text-neutral-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <Sidebar role={userRole} onNavigate={() => setMobileOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col md:hidden">
+            <Sidebar
+              role={userRole}
+              userName={userName}
+              userKelas={userKelas}
+              stats={stats}
+              onNavigate={() => setMobileOpen(false)}
+              onClose={() => setMobileOpen(false)}
+            />
           </div>
         </>
       )}
