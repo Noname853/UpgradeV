@@ -26,7 +26,7 @@ export const rules: Rule[] = [
   {
     n: '03',
     title: 'RAWAT ALAT',
-    desc: 'Gunakan alat sesuai fungsinya dan jaga kebersihannya. Dilarang memindahtangankan ke siswa lain.',
+    desc: 'Gunakan alat sesuai fungsinya dan jaga kebersihannya. Dilarang memindah tangankan ke siswa lain.',
     hex: '#2dd4a0',
     rgb: '45,212,160',
   },
