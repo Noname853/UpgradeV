@@ -1,5 +1,6 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Orbitron, Rajdhani } from 'next/font/google'
+import { PwaRegister } from '@/components/shared/PwaRegister'
 import './globals.css'
 
 const geistSans = Geist({
@@ -34,7 +35,20 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Iventaris TKJ — Sistem Inventaris Sekolah',
   description: 'Sistem manajemen inventaris modern untuk laboratorium sekolah kejuruan',
-  icons: [],
+  icons: {
+    icon: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  // Dukungan "Add to Home Screen" iOS (Safari tidak sepenuhnya memakai manifest).
+  appleWebApp: {
+    capable: true,
+    title: 'Inventaris TKJ',
+    statusBarStyle: 'black-translucent',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
 }
 
 export default function RootLayout({
@@ -44,7 +58,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${rajdhani.variable}`}>
-      <body className="min-h-screen bg-black text-white antialiased">{children}</body>
+      <body className="min-h-screen bg-black text-white antialiased">
+        <PwaRegister />
+        {children}
+      </body>
     </html>
   )
 }
