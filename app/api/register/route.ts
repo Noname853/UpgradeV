@@ -13,6 +13,11 @@ const schema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  // Saklar tutup pendaftaran: set REGISTRASI_DITUTUP=true untuk menolak akun siswa baru.
+  if (process.env.REGISTRASI_DITUTUP === 'true') {
+    return NextResponse.json({ error: 'Pendaftaran akun baru sedang ditutup' }, { status: 403 })
+  }
+
   const ip = clientIp(req.headers)
   if (!(await checkRateLimit(`register:${ip}`, 5, 10 * 60_000))) {
     return NextResponse.json({ error: 'Terlalu banyak percobaan, coba lagi nanti' }, { status: 429 })
