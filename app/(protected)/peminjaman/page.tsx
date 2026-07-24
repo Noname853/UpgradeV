@@ -207,33 +207,36 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         </div>
 
         {/* Filter cepat per tingkat (10 / 11 / 12) */}
-        <div className="mb-[18px] flex flex-wrap items-center gap-2.5">
-          <span className="hud-label text-[10px]" style={{ color: '#6b7785', letterSpacing: '1.5px' }}>TINGKAT</span>
-          <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-            <div
-              className="inline-flex gap-1 p-[4px] hud-clip-md"
-              style={{ border: '1px solid rgba(99,102,241,0.28)', background: 'rgba(255,255,255,0.02)' }}
-            >
-              {TINGKAT_OPTIONS.map((opt) => {
-                const active = tingkat === opt.value
-                return (
-                  <Link
-                    key={opt.value || 'all'}
-                    href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat: opt.value })}`}
-                    className="whitespace-nowrap px-4 py-[7px] text-[13px] transition hud-clip-sm"
-                    style={{
-                      color: active ? '#fff' : '#8a97a3',
-                      fontWeight: active ? 600 : 400,
-                      background: active
-                        ? 'linear-gradient(135deg, rgba(37,99,235,0.55), rgba(147,51,234,0.45))'
-                        : 'transparent',
-                    }}
-                  >
-                    {opt.label}
-                  </Link>
-                )
-              })}
-            </div>
+        <div className="mb-[18px]">
+          <span
+            className="hud-label mb-2 block text-[10px]"
+            style={{ color: '#6b7785', letterSpacing: '1.5px' }}
+          >
+            TINGKAT
+          </span>
+          <div
+            className="grid grid-cols-4 gap-1 p-[4px] hud-clip-md md:inline-flex"
+            style={{ border: '1px solid rgba(99,102,241,0.28)', background: 'rgba(255,255,255,0.02)' }}
+          >
+            {TINGKAT_OPTIONS.map((opt) => {
+              const active = tingkat === opt.value
+              return (
+                <Link
+                  key={opt.value || 'all'}
+                  href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat: opt.value })}`}
+                  className="block w-full whitespace-nowrap px-2 py-[7px] text-center text-[12.5px] transition hud-clip-sm md:w-auto md:px-4 md:text-[13px]"
+                  style={{
+                    color: active ? '#fff' : '#8a97a3',
+                    fontWeight: active ? 600 : 400,
+                    background: active
+                      ? 'linear-gradient(135deg, rgba(37,99,235,0.55), rgba(147,51,234,0.45))'
+                      : 'transparent',
+                  }}
+                >
+                  {opt.label}
+                </Link>
+              )
+            })}
           </div>
         </div>
 
@@ -257,7 +260,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
           <select
             name="kelas"
             defaultValue={kelasFilter}
-            className="hud-clip-sm py-[9px] px-3 text-[13.5px] outline-none"
+            className="hud-clip-sm flex-1 py-[9px] px-3 text-[13.5px] outline-none md:flex-none"
             style={{
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(99,102,241,0.28)',
