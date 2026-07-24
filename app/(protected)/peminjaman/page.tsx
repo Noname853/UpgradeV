@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@/lib/generated/prisma/client'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { Plus, PackageCheck, Search, Archive, X } from 'lucide-react'
@@ -14,6 +15,15 @@ const STATUS_TABS = [
   { label: 'Dibatalkan', value: 'dibatalkan' },
 ]
 
+// Filter cepat per tingkat. `roman` mencocokkan awalan angka Romawi pada
+// kolom kelas (mis. "XII TKJ 1", "XI TKJ 2", "X TKJ 3").
+const TINGKAT_OPTIONS = [
+  { label: 'Semua', value: '', roman: '' },
+  { label: 'Kelas 10', value: '10', roman: 'X' },
+  { label: 'Kelas 11', value: '11', roman: 'XI' },
+  { label: 'Kelas 12', value: '12', roman: 'XII' },
+]
+
 const ARCHIVE_DAYS = 30
 
 interface SearchParams {
@@ -21,6 +31,7 @@ interface SearchParams {
   page?: string
   search?: string
   kelas?: string
+  tingkat?: string
 }
 
 function buildQueryString(params: Record<string, string>) {
@@ -34,6 +45,8 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
   const page = parseInt(sp.page ?? '1')
   const search = sp.search ?? ''
   const kelasFilter = sp.kelas ?? ''
+  const tingkat = sp.tingkat ?? ''
+  const tingkatRoman = TINGKAT_OPTIONS.find((t) => t.value && t.value === tingkat)?.roman ?? ''
   const limit = 10
 
   const session = await auth()
@@ -54,19 +67,31 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
     NOT: archiveCondition,
   }
 
-  const where = {
+  // Kondisi pencarian & filter kelas/tingkat dikumpulkan sebagai AND agar
+  // beberapa syarat pada relasi `user` tidak saling menimpa.
+  const filterConditions: Prisma.PeminjamanWhereInput[] = []
+  if (search) {
+    filterConditions.push({
+      OR: [
+        { user: { name: { contains: search } } },
+        { details: { some: { unit: { alat: { nama: { contains: search } } } } } },
+      ],
+    })
+  }
+  if (kelasFilter) {
+    filterConditions.push({ user: { kelas: kelasFilter } })
+  }
+  if (tingkatRoman) {
+    filterConditions.push({
+      user: { OR: [{ kelas: tingkatRoman }, { kelas: { startsWith: `${tingkatRoman} ` } }] },
+    })
+  }
+
+  const where: Prisma.PeminjamanWhereInput = {
     ...(isAdmin ? {} : { userId }),
     ...(status ? { status } : {}),
     ...(isAdmin ? activeCondition : {}),
-    ...(search
-      ? {
-          OR: [
-            { user: { name: { contains: search } } },
-            { details: { some: { unit: { alat: { nama: { contains: search } } } } } },
-          ],
-        }
-      : {}),
-    ...(kelasFilter ? { user: { kelas: kelasFilter } } : {}),
+    ...(filterConditions.length ? { AND: filterConditions } : {}),
   }
 
   const [peminjamans, total, archivedCount, kelasList, statusCounts] = await Promise.all([
@@ -103,15 +128,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
               where: {
                 status: tab.value,
                 ...activeCondition,
-                ...(search
-                  ? {
-                      OR: [
-                        { user: { name: { contains: search } } },
-                        { details: { some: { unit: { alat: { nama: { contains: search } } } } } },
-                      ],
-                    }
-                  : {}),
-                ...(kelasFilter ? { user: { kelas: kelasFilter } } : {}),
+                ...(filterConditions.length ? { AND: filterConditions } : {}),
               },
             }),
           }))
@@ -125,7 +142,8 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
     .map((u) => u.kelas)
     .filter((k): k is string => k !== null)
 
-  const hasFilters = search || kelasFilter
+  const tingkatLabel = TINGKAT_OPTIONS.find((t) => t.value === tingkat && t.value)?.label
+  const hasFilters = search || kelasFilter || tingkat
 
   if (isAdmin) {
     return (
@@ -165,7 +183,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
               return (
                 <Link
                   key={tab.value}
-                  href={`/peminjaman${buildQueryString({ status: tab.value, search, kelas: kelasFilter })}`}
+                  href={`/peminjaman${buildQueryString({ status: tab.value, search, kelas: kelasFilter, tingkat })}`}
                   className="whitespace-nowrap px-3 py-2 text-[13px] transition hud-clip-sm"
                   style={{
                     color: active ? '#fff' : '#6b7785',
@@ -185,6 +203,37 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
                 </Link>
               )
             })}
+          </div>
+        </div>
+
+        {/* Filter cepat per tingkat (10 / 11 / 12) */}
+        <div className="mb-[18px] flex flex-wrap items-center gap-2.5">
+          <span className="hud-label text-[10px]" style={{ color: '#6b7785', letterSpacing: '1.5px' }}>TINGKAT</span>
+          <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+            <div
+              className="inline-flex gap-1 p-[4px] hud-clip-md"
+              style={{ border: '1px solid rgba(99,102,241,0.28)', background: 'rgba(255,255,255,0.02)' }}
+            >
+              {TINGKAT_OPTIONS.map((opt) => {
+                const active = tingkat === opt.value
+                return (
+                  <Link
+                    key={opt.value || 'all'}
+                    href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat: opt.value })}`}
+                    className="whitespace-nowrap px-4 py-[7px] text-[13px] transition hud-clip-sm"
+                    style={{
+                      color: active ? '#fff' : '#8a97a3',
+                      fontWeight: active ? 600 : 400,
+                      background: active
+                        ? 'linear-gradient(135deg, rgba(37,99,235,0.55), rgba(147,51,234,0.45))'
+                        : 'transparent',
+                    }}
+                  >
+                    {opt.label}
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -223,6 +272,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
             ))}
           </select>
           {status && <input type="hidden" name="status" value={status} />}
+          {tingkat && <input type="hidden" name="tingkat" value={tingkat} />}
           <button
             type="submit"
             className="hud-clip-sm px-4 py-[9px] text-[12px] font-semibold transition"
@@ -246,9 +296,18 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         {hasFilters && (
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="hud-label text-[10px]" style={{ color: '#6b7785', letterSpacing: '1.5px' }}>FILTER AKTIF:</span>
+            {tingkatLabel && (
+              <Link
+                href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat: '' })}`}
+                className="hud-clip-sm inline-flex items-center gap-1 px-2.5 py-1 text-[12px]"
+                style={{ background: 'rgba(92,132,255,0.14)', color: '#fff', border: '1px solid rgba(92,132,255,0.45)' }}
+              >
+                Tingkat: {tingkatLabel} <X className="h-3 w-3" />
+              </Link>
+            )}
             {kelasFilter && (
               <Link
-                href={`/peminjaman${buildQueryString({ status, search, kelas: '' })}`}
+                href={`/peminjaman${buildQueryString({ status, search, kelas: '', tingkat })}`}
                 className="hud-clip-sm inline-flex items-center gap-1 px-2.5 py-1 text-[12px]"
                 style={{ background: 'rgba(92,132,255,0.14)', color: '#fff', border: '1px solid rgba(92,132,255,0.45)' }}
               >
@@ -257,7 +316,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
             )}
             {search && (
               <Link
-                href={`/peminjaman${buildQueryString({ status, search: '', kelas: kelasFilter })}`}
+                href={`/peminjaman${buildQueryString({ status, search: '', kelas: kelasFilter, tingkat })}`}
                 className="hud-clip-sm inline-flex items-center gap-1 px-2.5 py-1 text-[12px]"
                 style={{ background: 'rgba(92,132,255,0.14)', color: '#fff', border: '1px solid rgba(92,132,255,0.45)' }}
               >
@@ -327,7 +386,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
               return (
                 <Link
                   key={p}
-                  href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, page: String(p) })}`}
+                  href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat, page: String(p) })}`}
                   className="min-w-[40px] px-3 py-2 text-center text-[13px] hud-clip-sm"
                   style={
                     active
