@@ -15,13 +15,15 @@ const STATUS_TABS = [
   { label: 'Dibatalkan', value: 'dibatalkan' },
 ]
 
-// Filter cepat per tingkat. `roman` mencocokkan awalan angka Romawi pada
-// kolom kelas (mis. "XII TKJ 1", "XI TKJ 2", "X TKJ 3").
-const TINGKAT_OPTIONS = [
-  { label: 'Semua', value: '', roman: '' },
-  { label: 'Kelas 10', value: '10', roman: 'X' },
-  { label: 'Kelas 11', value: '11', roman: 'XI' },
-  { label: 'Kelas 12', value: '12', roman: 'XII' },
+// Filter cepat per tingkat. `prefixes` mencocokkan awalan kolom kelas untuk
+// dua format yang dipakai di lapangan: angka biasa ("12 TKJ A") maupun angka
+// Romawi ("XII TKJ 1"). Awalan diuji dengan spasi setelahnya agar "11"/"XI"
+// tidak ikut menangkap "12"/"XII".
+const TINGKAT_OPTIONS: { label: string; value: string; prefixes: string[] }[] = [
+  { label: 'Semua', value: '', prefixes: [] },
+  { label: 'Kelas 10', value: '10', prefixes: ['10', 'X'] },
+  { label: 'Kelas 11', value: '11', prefixes: ['11', 'XI'] },
+  { label: 'Kelas 12', value: '12', prefixes: ['12', 'XII'] },
 ]
 
 const ARCHIVE_DAYS = 30
@@ -46,7 +48,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
   const search = sp.search ?? ''
   const kelasFilter = sp.kelas ?? ''
   const tingkat = sp.tingkat ?? ''
-  const tingkatRoman = TINGKAT_OPTIONS.find((t) => t.value && t.value === tingkat)?.roman ?? ''
+  const tingkatPrefixes = TINGKAT_OPTIONS.find((t) => t.value && t.value === tingkat)?.prefixes ?? []
   const limit = 10
 
   const session = await auth()
@@ -81,9 +83,14 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
   if (kelasFilter) {
     filterConditions.push({ user: { kelas: kelasFilter } })
   }
-  if (tingkatRoman) {
+  if (tingkatPrefixes.length) {
     filterConditions.push({
-      user: { OR: [{ kelas: tingkatRoman }, { kelas: { startsWith: `${tingkatRoman} ` } }] },
+      user: {
+        OR: tingkatPrefixes.flatMap((p) => [
+          { kelas: p },
+          { kelas: { startsWith: `${p} ` } },
+        ]),
+      },
     })
   }
 
@@ -114,7 +121,9 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
       : Promise.resolve(0),
     isAdmin
       ? prisma.user.findMany({
-          where: { role: 'siswa', isActive: true, kelas: { not: null } },
+          // Ambil kelas yang benar-benar punya peminjaman agar dropdown selalu
+          // mencerminkan data yang ada (tidak dibatasi role/isActive).
+          where: { kelas: { not: null }, peminjamans: { some: {} } },
           select: { kelas: true },
           distinct: ['kelas'],
           orderBy: { kelas: 'asc' },
