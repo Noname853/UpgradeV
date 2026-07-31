@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { isSameOrigin } from '@/lib/csrf'
-import { getBookingDibuka, bolehAjukan, dalamJamOperasional, JAM_BUKA, JAM_TUTUP } from '@/lib/pengaturan'
+import { getPengaturan, bolehAjukan, dalamJamOperasional } from '@/lib/pengaturan'
 import { z } from 'zod'
 
 const AKTIF = ['menunggu_verifikasi', 'dipinjam']
@@ -13,7 +13,9 @@ const AKTIF = ['menunggu_verifikasi', 'dipinjam']
 // sama. Nilai ini dihitung di server agar tidak bisa diakali dari client.
 const WIB_OFFSET = 7 // Asia/Jakarta = UTC+7, tanpa DST
 
-function batasKembaliHariIni(): Date {
+// Batas kembali: pukul `jamTutup` WIB, `maxHari` hari sejak hari ini
+// (maxHari = 1 → hari yang sama). Dihitung di server agar tidak bisa diakali.
+function batasKembali(jamTutup: number, maxHari: number): Date {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta',
     year: 'numeric',
@@ -23,9 +25,11 @@ function batasKembaliHariIni(): Date {
   const y = parts.find((p) => p.type === 'year')!.value
   const m = parts.find((p) => p.type === 'month')!.value
   const d = parts.find((p) => p.type === 'day')!.value
-  // 17:00 WIB = (17 - 7):00 UTC = 10:00 UTC pada tanggal yang sama.
-  const jamUtc = String(JAM_TUTUP - WIB_OFFSET).padStart(2, '0')
-  return new Date(`${y}-${m}-${d}T${jamUtc}:00:00.000Z`)
+  // jamTutup WIB → UTC (setUTCHours menangani nilai negatif dengan roll hari).
+  const base = new Date(`${y}-${m}-${d}T00:00:00.000Z`)
+  base.setUTCHours(jamTutup - WIB_OFFSET, 0, 0, 0)
+  if (maxHari > 1) base.setUTCDate(base.getUTCDate() + (maxHari - 1))
+  return base
 }
 
 const peminjamanCreateSchema = z
@@ -36,8 +40,9 @@ const peminjamanCreateSchema = z
       .array(
         z
           .object({
-            // Maks 1 unit per alat: satu item = satu jenis alat = satu unit.
-            unitIds: z.array(z.coerce.number().int().positive()).min(1).max(1),
+            // Satu item = satu jenis alat. Boleh >1 unit bila admin mengizinkan
+            // (setelan bolehMultiUnit); dibatasi di server oleh maxUnitSiswa.
+            unitIds: z.array(z.coerce.number().int().positive()).min(1).max(20),
             keterangan: z.preprocess(
               (v) => (v === '' || v == null ? null : v),
               z.string().max(500).nullable(),
@@ -118,12 +123,12 @@ export async function POST(req: NextRequest) {
     // Gate buka/tutup: pengajuan "pilih dari daftar" butuh saklar admin
     // terbuka DAN dalam jam operasional. Di luar itu, hanya unit hasil scan
     // QR (viaScan) yang boleh — sudah membuktikan kehadiran fisik di lab.
-    const manualDibuka = await getBookingDibuka()
-    const jamOperasional = dalamJamOperasional()
-    const bookingDibuka = manualDibuka && jamOperasional
+    const pengaturan = await getPengaturan()
+    const jamOperasional = dalamJamOperasional(new Date(), pengaturan.jamBuka, pengaturan.jamTutup)
+    const bookingDibuka = pengaturan.bookingDibuka && jamOperasional
     if (!bolehAjukan(bookingDibuka, items)) {
       const error = !jamOperasional
-        ? `Di luar jam operasional peminjaman (${JAM_BUKA}:00–${JAM_TUTUP}:00 WIB). Silakan ajukan besok, atau pinjam dengan scan QR unit di lab.`
+        ? `Di luar jam operasional peminjaman (${pengaturan.jamBuka}:00–${pengaturan.jamTutup}:00 WIB). Silakan ajukan besok, atau pinjam dengan scan QR unit di lab.`
         : 'Pendaftaran via pilih daftar sedang ditutup. Silakan pinjam dengan scan QR unit di lab.'
       return NextResponse.json({ error }, { status: 403 })
     }
@@ -178,10 +183,20 @@ export async function POST(req: NextRequest) {
         if (u.peminjamanDetails.length > 0) {
           throw new UnitError(`Unit ${u.kode} (${u.alat.nama}) sedang dipinjam, silakan pilih unit lain`)
         }
-        if (alatTerpakai.has(u.alat.id)) {
+        if (!pengaturan.bolehMultiUnit && alatTerpakai.has(u.alat.id)) {
           throw new UnitError(`Maksimal 1 unit per alat — ${u.alat.nama} dipilih lebih dari 1 unit`)
         }
         alatTerpakai.add(u.alat.id)
+      }
+
+      // Batas total unit aktif per siswa (setelan admin).
+      const aktifCount = await tx.peminjamanDetail.count({
+        where: { peminjaman: { userId, status: { in: AKTIF } } },
+      })
+      if (aktifCount + allUnitIds.length > pengaturan.maxUnitSiswa) {
+        throw new UnitError(
+          `Melebihi batas ${pengaturan.maxUnitSiswa} unit aktif per siswa — kamu sedang meminjam ${aktifCount} unit. Kembalikan dulu sebagian.`,
+        )
       }
 
       return tx.peminjaman.create({
@@ -191,8 +206,10 @@ export async function POST(req: NextRequest) {
           keperluan,
           catatan: catatan ?? null,
           tanggalPinjam: new Date(),
-          tanggalBatasKembali: batasKembaliHariIni(),
-          status: 'menunggu_verifikasi',
+          tanggalBatasKembali: batasKembali(pengaturan.jamTutup, pengaturan.maxHari),
+          // Verifikasi otomatis: langsung "dipinjam" tanpa perlu approve admin.
+          status: pengaturan.verifikasiOtomatis ? 'dipinjam' : 'menunggu_verifikasi',
+          tanggalVerifikasi: pengaturan.verifikasiOtomatis ? new Date() : null,
           details: {
             create: allUnitIds.map((uid) => ({
               unitId: uid,

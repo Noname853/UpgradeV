@@ -361,28 +361,31 @@ export function Sidebar({ role, userName, userKelas, stats, onNavigate, onClose 
         <span className="hud-label" style={{ fontSize: 9, letterSpacing: 1.6, color: '#5d717d' }}>
           SISTEM ONLINE
         </span>
-        <button
-          type="button"
-          onClick={() => signOut({ callbackUrl: isAdmin ? '/login' : '/' })}
-          className="ml-auto flex items-center gap-[6px] px-[12px] py-[7px] transition-colors hover:text-red-400"
-          style={{
-            fontFamily: 'var(--font-orbitron), sans-serif',
-            fontSize: 9.5,
-            fontWeight: 700,
-            letterSpacing: 1.2,
-            textTransform: 'uppercase',
-            color: '#f7a8a8',
-            border: '1px solid rgba(239,68,68,0.32)',
-            background: 'rgba(239,68,68,0.05)',
-            clipPath:
-              'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
-          }}
-        >
-          <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
-          Keluar
-        </button>
+        {/* Tombol Keluar hanya di sidebar desktop; drawer mobile logout via Profil. */}
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: isAdmin ? '/login' : '/' })}
+            className="ml-auto flex items-center gap-[6px] px-[12px] py-[7px] transition-colors hover:text-red-400"
+            style={{
+              fontFamily: 'var(--font-orbitron), sans-serif',
+              fontSize: 9.5,
+              fontWeight: 700,
+              letterSpacing: 1.2,
+              textTransform: 'uppercase',
+              color: '#f7a8a8',
+              border: '1px solid rgba(239,68,68,0.32)',
+              background: 'rgba(239,68,68,0.05)',
+              clipPath:
+                'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)',
+            }}
+          >
+            <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            Keluar
+          </button>
+        )}
       </div>
     </aside>
   )

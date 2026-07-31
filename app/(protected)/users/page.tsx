@@ -122,7 +122,58 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         </Link>
       </div>
 
-      <div className="hud-panel hud-rise overflow-hidden">
+      {/* Mobile: daftar kartu (tabel disembunyikan di HP) */}
+      <div className="flex flex-col gap-2.5 md:hidden hud-rise">
+        {users.map((u) => (
+          <div key={u.id} className="hud-panel p-4" style={{ opacity: u.isActive ? 1 : 0.55 }}>
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                style={{
+                  background: u.isActive
+                    ? 'linear-gradient(135deg, #3b82f6, #9333ea)'
+                    : 'rgba(255,255,255,0.08)',
+                }}
+              >
+                {u.name[0]}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-[15px] font-semibold" style={{ color: '#e8edf2' }}>{u.name}</p>
+                  {!u.isActive && (
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px]" style={{ color: '#8a97a3', background: 'rgba(255,255,255,0.06)' }}>
+                      Nonaktif
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 truncate text-[12.5px]" style={{ color: '#6b7785' }}>{u.email}</p>
+              </div>
+            </div>
+            <div
+              className="mt-3 flex items-center justify-between gap-2 pt-3"
+              style={{ borderTop: '1px solid rgba(99,102,241,0.1)' }}
+            >
+              <span className="text-[12px]" style={{ color: '#8a97a3' }}>
+                {u.kelas ?? '-'} · {formatDate(u.createdAt)}
+              </span>
+              <div className="flex items-center gap-3">
+                <Link href={`/users/${u.id}/detail`} className="text-[12.5px]" style={{ color: '#8a97a3' }}>Detail</Link>
+                <Link href={`/users/${u.id}/edit`} className="text-[12.5px]" style={{ color: '#8a97a3' }}>Edit</Link>
+                <DeleteUserButton id={u.id} isActive={u.isActive} />
+              </div>
+            </div>
+          </div>
+        ))}
+        {users.length === 0 && (
+          <div className="hud-panel flex flex-col items-center justify-center py-12" style={{ color: '#6b7785' }}>
+            <Users className="mb-2 h-10 w-10" />
+            <p>Tidak ada user ditemukan</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: tabel */}
+      <div className="hidden hud-panel hud-rise overflow-hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] border-collapse">
             <thead>

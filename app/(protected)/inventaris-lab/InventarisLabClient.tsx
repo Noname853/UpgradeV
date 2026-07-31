@@ -230,14 +230,14 @@ export function InventarisLabClient({ sheets }: Props) {
         </div>
       ) : (
         <>
-          {/* tab per sheet */}
-          <div className="mb-4 flex flex-wrap gap-2">
+          {/* tab per sheet — scroll horizontal di HP */}
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
             {sheets.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => { setActiveId(s.id); setEditingId(null) }}
-                className="hud-clip-sm px-3 py-1.5 text-[12px] font-semibold"
+                className="hud-clip-sm shrink-0 whitespace-nowrap px-3 py-1.5 text-[12px] font-semibold"
                 style={
                   s.id === active?.id
                     ? { color: '#fff', border: '1px solid rgba(92,132,255,0.6)', background: 'rgba(92,132,255,0.15)' }
@@ -265,9 +265,140 @@ export function InventarisLabClient({ sheets }: Props) {
             </div>
           )}
 
-          {/* tabel */}
+          {/* Mobile: kartu item (tabel disembunyikan di HP) */}
           {active && (
-            <div className="hud-panel overflow-hidden">
+            <div className="flex flex-col gap-2.5 md:hidden">
+              {active.items.map((it, i) => {
+                const isEdit = editingId === it.id
+                const inputStyle = {
+                  color: '#e8edf2',
+                  background: 'rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(92,132,255,0.45)',
+                }
+                return (
+                  <div key={it.id} className="hud-panel p-3.5">
+                    <div className="flex items-start gap-3">
+                      {it.foto ? (
+                        <button
+                          type="button"
+                          onClick={() => setLightbox({ nama: it.nama, foto: it.foto! })}
+                          className="block h-12 w-12 shrink-0 overflow-hidden hud-clip-sm"
+                          style={{ border: '1px solid rgba(99,102,241,0.3)' }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- URL foto eksternal (https) */}
+                          <img src={it.foto} alt={it.nama} className="h-full w-full object-cover" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => ubahFoto(it)}
+                          className="flex h-12 w-12 shrink-0 items-center justify-center hud-clip-sm"
+                          style={{ border: '1px dashed rgba(99,102,241,0.35)', color: '#5d717d' }}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                        </button>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-0.5 text-[10px]" style={{ color: '#6b7785' }}>No. {i + 1}</div>
+                        {isEdit ? (
+                          <input value={draft.nama} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} maxLength={200} placeholder="Nama" className="w-full px-2 py-1.5 text-[13px] hud-clip-sm" style={inputStyle} />
+                        ) : (
+                          <p className="text-[14.5px] font-semibold" style={{ color: '#e8edf2' }}>{it.nama}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                      <div className="hud-clip-sm px-2 py-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.12)' }}>
+                        <div className="text-[9.5px]" style={{ color: '#6b7785' }}>Jumlah</div>
+                        {isEdit ? (
+                          <input value={draft.jumlah} onChange={(e) => setDraft({ ...draft, jumlah: e.target.value })} maxLength={50} className="mt-1 w-full px-1.5 py-1 text-center text-[13px] hud-clip-sm" style={inputStyle} />
+                        ) : (
+                          <div className="mt-0.5 text-[15px] font-bold" style={{ color: '#c3ccd6' }}>{it.jumlah || '—'}</div>
+                        )}
+                      </div>
+                      {active.jenis === 'lab' && (
+                        <>
+                          <div className="hud-clip-sm px-2 py-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.12)' }}>
+                            <div className="text-[9.5px]" style={{ color: '#6b7785' }}>Baik</div>
+                            {isEdit ? (
+                              <input type="number" min={0} value={draft.baik} onChange={(e) => setDraft({ ...draft, baik: e.target.value })} className="mt-1 w-full px-1.5 py-1 text-center text-[13px] hud-clip-sm" style={inputStyle} />
+                            ) : (
+                              <div className="mt-0.5 text-[15px] font-bold" style={{ color: '#4ade80' }}>{it.baik ?? '—'}</div>
+                            )}
+                          </div>
+                          <div className="hud-clip-sm px-2 py-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(99,102,241,0.12)' }}>
+                            <div className="text-[9.5px]" style={{ color: '#6b7785' }}>Rusak</div>
+                            {isEdit ? (
+                              <input type="number" min={0} value={draft.rusak} onChange={(e) => setDraft({ ...draft, rusak: e.target.value })} className="mt-1 w-full px-1.5 py-1 text-center text-[13px] hud-clip-sm" style={inputStyle} />
+                            ) : (
+                              <div className="mt-0.5 text-[15px] font-bold" style={{ color: it.rusak && it.rusak > 0 ? '#f87171' : '#6b7785' }}>{it.rusak ?? '—'}</div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {active.jenis === 'lab' ? (
+                      <div className="mt-2.5">
+                        <div className="mb-1 text-[9.5px]" style={{ color: '#6b7785' }}>Deskripsi</div>
+                        {isEdit ? (
+                          <input value={draft.deskripsi} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} maxLength={1000} placeholder="—" className="w-full px-2 py-1.5 text-[12.5px] hud-clip-sm" style={inputStyle} />
+                        ) : (
+                          <p className="text-[12.5px]" style={{ color: '#8a97a3' }}>{it.deskripsi || '—'}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-2.5">
+                        <div className="mb-1 text-[9.5px]" style={{ color: '#6b7785' }}>Link</div>
+                        {isEdit ? (
+                          <input value={draft.link} onChange={(e) => setDraft({ ...draft, link: e.target.value })} maxLength={2000} placeholder="https://…" className="w-full px-2 py-1.5 text-[12.5px] hud-clip-sm" style={inputStyle} />
+                        ) : it.link ? (
+                          <a href={it.link} target="_blank" rel="noopener noreferrer" className="break-all text-[12.5px] hover:underline" style={{ color: '#5c84ff' }}>{it.link}</a>
+                        ) : (
+                          <span className="text-[12.5px]" style={{ color: '#6b7785' }}>—</span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-end gap-1.5 pt-3" style={{ borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                      {isEdit ? (
+                        <>
+                          <button type="button" disabled={busy} onClick={() => simpanEdit(it, active.jenis)} className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold hud-clip-sm" style={{ color: '#4ade80', border: '1px solid rgba(34,197,94,0.35)' }}>
+                            <Check className="h-3.5 w-3.5" /> Simpan
+                          </button>
+                          <button type="button" onClick={() => setEditingId(null)} className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold hud-clip-sm" style={{ color: '#8a97a3', border: '1px solid rgba(99,102,241,0.3)' }}>
+                            <X className="h-3.5 w-3.5" /> Batal
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" disabled={busy} onClick={() => ubahFoto(it)} className="flex h-8 w-8 items-center justify-center hud-clip-sm" style={{ color: '#a855f7', border: '1px solid rgba(168,85,247,0.3)' }} title="Ubah Foto">
+                            <ImagePlus className="h-4 w-4" />
+                          </button>
+                          <button type="button" disabled={busy} onClick={() => mulaiEdit(it)} className="flex h-8 w-8 items-center justify-center hud-clip-sm" style={{ color: '#5c84ff', border: '1px solid rgba(92,132,255,0.3)' }} title="Edit">
+                            <SquarePen className="h-4 w-4" />
+                          </button>
+                          <button type="button" disabled={busy} onClick={() => hapus(it)} className="flex h-8 w-8 items-center justify-center hud-clip-sm" style={{ color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }} title="Hapus">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+              {active.items.length === 0 && (
+                <p className="hud-panel px-4 py-8 text-center text-[13px]" style={{ color: '#6b7785' }}>
+                  Sheet ini kosong — tambah barang atau import ulang.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Desktop: tabel */}
+          {active && (
+            <div className="hidden hud-panel overflow-hidden md:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-max text-sm">
                   <thead>

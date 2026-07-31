@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { checkRateLimit, clientIp } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { IsiDemoButtons } from './IsiDemoButtons'
 
 export default async function LoginPage({
   searchParams,
@@ -58,6 +59,21 @@ export default async function LoginPage({
       <span className="tf-br tf-br-br" aria-hidden />
 
       <div className="relative" style={{ zIndex: 2 }}>
+        {/* Logo heksagon */}
+        <div className="mb-5 flex flex-col items-center">
+          <div
+            className="mb-2 flex h-14 w-14 items-center justify-center"
+            style={{ clipPath: 'polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)', background: 'linear-gradient(135deg,#2563eb,#9333ea)', boxShadow: '0 0 20px -4px rgba(92,132,255,0.7)' }}
+          >
+            <svg width="22" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z" />
+              <path d="M12 8v6M9 11l3-3 3 3" />
+            </svg>
+          </div>
+          <div className="tf-head text-lg font-bold text-white">SISTEM</div>
+          <div className="text-[9px] font-semibold tracking-[4px] text-blue-400">ONLY · UNIT</div>
+        </div>
+
         <h1 className="tf-head mb-1 text-2xl font-bold text-white">Masuk</h1>
         <p className="mb-6 text-sm text-neutral-400">Silakan login untuk melanjutkan</p>
 
@@ -67,10 +83,13 @@ export default async function LoginPage({
           </p>
         )}
 
+        {process.env.NODE_ENV !== 'production' && <IsiDemoButtons />}
+
         <form action={loginAction} className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm text-neutral-300">Email</label>
             <input
+              id="email"
               name="email"
               type="email"
               required
@@ -81,6 +100,7 @@ export default async function LoginPage({
           <div>
             <label className="mb-1.5 block text-sm text-neutral-300">Password</label>
             <input
+              id="password"
               name="password"
               type="password"
               required

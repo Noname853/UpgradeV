@@ -1,14 +1,39 @@
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
-export const JAM_BUKA = 6 // 06:00 WIB
-export const JAM_TUTUP = 17 // 17:00 WIB
+export const JAM_BUKA = 6 // 06:00 WIB (default)
+export const JAM_TUTUP = 17 // 17:00 WIB (default)
 
-// Jam operasional lab, dicek server-side (bukan cuma UI seperti versi lama).
-// Dipakai BARENG saklar admin: pengajuan pilih-dari-daftar butuh keduanya —
-// saklar terbuka DAN sedang dalam jam ini. Scan QR tetap terkecuali (lihat
-// bolehAjukan) karena sudah membuktikan kehadiran fisik di lab.
-export function dalamJamOperasional(now: Date = new Date()): boolean {
+export interface PengaturanData {
+  bookingDibuka: boolean
+  jamBuka: number
+  jamTutup: number
+  maxUnitSiswa: number
+  maxHari: number
+  verifikasiOtomatis: boolean
+  peringatanKeterlambatan: boolean
+  bolehMultiUnit: boolean
+}
+
+export const PENGATURAN_DEFAULT: PengaturanData = {
+  bookingDibuka: true,
+  jamBuka: JAM_BUKA,
+  jamTutup: JAM_TUTUP,
+  maxUnitSiswa: 3,
+  maxHari: 1,
+  verifikasiOtomatis: false,
+  peringatanKeterlambatan: true,
+  bolehMultiUnit: false,
+}
+
+// Jam operasional lab, dicek server-side. Jam buka/tutup kini bisa diatur admin
+// (disimpan di DB); default 06:00-17:00 bila belum diubah. Fungsi ini murni agar
+// mudah diuji — pemanggil melewatkan jam dari DB.
+export function dalamJamOperasional(
+  now: Date = new Date(),
+  jamBuka: number = JAM_BUKA,
+  jamTutup: number = JAM_TUTUP,
+): boolean {
   const jam = Number(
     new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Jakarta',
@@ -16,13 +41,33 @@ export function dalamJamOperasional(now: Date = new Date()): boolean {
       hourCycle: 'h23',
     }).format(now),
   )
-  return jam >= JAM_BUKA && jam < JAM_TUTUP
+  return jam >= jamBuka && jam < jamTutup
 }
 
-// Setelan disimpan sebagai baris tunggal. Bila belum ada baris (fresh DB),
-// default aman = booking terbuka. Query dibungkus try/catch agar tabel yang
-// belum sempat dibuat (mis. sesaat setelah deploy sebelum startup-migrations
-// jalan) tidak menjatuhkan halaman yang memakainya — cukup default terbuka.
+// Baca seluruh setelan sistem (satu baris tunggal). Default aman bila baris/tabel
+// belum ada (mis. fresh DB / sesaat setelah deploy).
+export async function getPengaturan(): Promise<PengaturanData> {
+  try {
+    const row = await prisma.pengaturan.findFirst()
+    if (!row) return { ...PENGATURAN_DEFAULT }
+    return {
+      bookingDibuka: row.bookingDibuka,
+      jamBuka: row.jamBuka,
+      jamTutup: row.jamTutup,
+      maxUnitSiswa: row.maxUnitSiswa,
+      maxHari: row.maxHari,
+      verifikasiOtomatis: row.verifikasiOtomatis,
+      peringatanKeterlambatan: row.peringatanKeterlambatan,
+      bolehMultiUnit: row.bolehMultiUnit,
+    }
+  } catch (err) {
+    logger.error({ err }, '[getPengaturan] gagal baca setelan, pakai default')
+    return { ...PENGATURAN_DEFAULT }
+  }
+}
+
+// Status buka/tutup booking saja (dipakai dashboard). Dibungkus try/catch agar
+// tabel yang belum sempat dibuat tidak menjatuhkan halaman.
 export async function getBookingDibuka(): Promise<boolean> {
   try {
     const row = await prisma.pengaturan.findFirst({ select: { bookingDibuka: true } })
@@ -44,6 +89,20 @@ export async function setBookingDibuka(dibuka: boolean, adminId: number) {
   }
   return prisma.pengaturan.create({
     data: { bookingDibuka: dibuka, diubahOleh: adminId },
+  })
+}
+
+// Simpan sebagian/seluruh setelan. Upsert baris tunggal.
+export async function setPengaturan(data: Partial<PengaturanData>, adminId: number) {
+  const existing = await prisma.pengaturan.findFirst({ select: { id: true } })
+  if (existing) {
+    return prisma.pengaturan.update({
+      where: { id: existing.id },
+      data: { ...data, diubahOleh: adminId },
+    })
+  }
+  return prisma.pengaturan.create({
+    data: { ...PENGATURAN_DEFAULT, ...data, diubahOleh: adminId },
   })
 }
 

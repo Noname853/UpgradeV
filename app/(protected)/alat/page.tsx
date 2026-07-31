@@ -1,6 +1,5 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { formatDate } from '@/lib/utils'
 import { Plus, Search, Package, FileSpreadsheet, QrCode } from 'lucide-react'
 import Link from 'next/link'
 
@@ -67,78 +66,77 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
   const renderCard = (alat: typeof alats[number]) => {
     const s = summary(alat.units)
     const tersediaColor = s.tersedia === 0 ? '#ef4444' : s.tersedia <= s.total * 0.3 ? '#eab308' : '#22c55e'
+    const pct = s.total ? Math.round((s.tersedia / s.total) * 100) : 0
     return (
-      <Link key={alat.id} href={`/alat/${alat.id}`}>
-        <div className="hud-panel hud-card-hover hud-rise p-[17px]">
-          <div className="mb-3 flex items-start justify-between">
+      <Link key={alat.id} href={`/alat/${alat.id}`} className="block">
+        <div className="hud-panel hud-card-hover hud-rise p-[16px]">
+          <div className="flex items-start gap-3">
             <div
-              className="hud-hex-wide flex h-[38px] w-[38px] items-center justify-center"
+              className="hud-hex-wide flex h-[44px] w-[44px] shrink-0 items-center justify-center"
               style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}
             >
-              <Package className="h-[18px] w-[18px]" style={{ color: '#3b82f6' }} />
+              <Package className="h-[20px] w-[20px]" style={{ color: '#3b82f6' }} />
             </div>
-            <span
-              className="hud-clip-sm inline-flex items-center px-2.5 py-0.5 text-xs font-medium"
-              style={{ color: tersediaColor, background: `${tersediaColor}1f`, border: `1px solid ${tersediaColor}4d` }}
-            >
-              {s.tersedia} / {s.total}
-            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-[16px] font-bold line-clamp-2" style={{ color: '#f0f4f8' }}>{alat.nama}</h3>
+                <span
+                  className="shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold"
+                  style={{ color: tersediaColor, background: `${tersediaColor}1f`, border: `1px solid ${tersediaColor}4d` }}
+                >
+                  {s.tersedia}/{s.total}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[12px]" style={{ color: '#6b7785' }}>
+                {alat.kategori}{alat.lokasi ? ` · ${alat.lokasi}` : ''}
+              </p>
+            </div>
           </div>
-          <h3 className="mb-1 text-[16px] font-bold line-clamp-2" style={{ color: '#f0f4f8' }}>{alat.nama}</h3>
-          <p className="mb-3 text-xs" style={{ color: '#6b7785' }}>{alat.kategori}</p>
-          <div className="mb-2 flex items-center gap-3 text-[11px]">
-            <span style={{ color: '#4ade80' }}>● {s.tersedia} tersedia</span>
-            {s.dipinjam > 0 && <span style={{ color: '#60a5fa' }}>● {s.dipinjam} dipinjam</span>}
-            {s.rusak > 0 && <span style={{ color: '#f87171' }}>● {s.rusak} rusak</span>}
-          </div>
-          <div className="flex items-center justify-between text-xs" style={{ color: '#6b7785' }}>
-            <span>{alat.lokasi}</span>
-            <span>{formatDate(alat.createdAt)}</span>
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(99,102,241,0.12)' }}>
+            <div style={{ width: `${pct}%`, height: '100%', background: tersediaColor, transition: 'width .3s' }} />
           </div>
         </div>
       </Link>
     )
   }
 
+  const chipHref = (kat: string) =>
+    `/alat?${new URLSearchParams({ ...(kat && { kategori: kat }), ...(search && { search }) })}`
+
   const renderFilters = () => (
-    <div className="hud-panel hud-rise mb-[18px] p-3.5">
-      <form className="flex flex-col gap-[11px] sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#6b7785' }} />
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="Cari nama alat..."
-            className="hud-input w-full py-2.5 pl-9 pr-3 text-sm"
-          />
-        </div>
-        <select
-          name="kategori"
-          defaultValue={kategori}
-          className="hud-input w-full px-3.5 py-2.5 text-sm sm:w-auto"
-          style={{ background: '#0e0f14', colorScheme: 'dark' }}
-        >
-          <option value="" style={{ background: '#0f1420', color: '#e8edf2' }}>Semua Kategori</option>
-          {kategoris.map((k) => (
-            <option key={k.kategori} value={k.kategori} style={{ background: '#0f1420', color: '#e8edf2' }}>
-              {k.kategori}
-            </option>
-          ))}
-        </select>
-        <div className="flex gap-2.5">
-          <button type="submit" className="hud-btn-ghost flex-1 px-5 py-2.5 text-[12px] sm:flex-none">
-            Filter
-          </button>
-          {(search || kategori) && (
-            <Link
-              href="/alat"
-              className="hud-btn-ghost flex-1 px-4 py-2.5 text-center text-[12px] sm:flex-none"
-            >
-              Reset
-            </Link>
-          )}
-        </div>
+    <div className="mb-[18px] hud-rise">
+      {/* Search */}
+      <form className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#6b7785' }} />
+        <input
+          name="search"
+          defaultValue={search}
+          placeholder="Cari alat..."
+          className="hud-input w-full py-2.5 pl-9 pr-3 text-sm"
+        />
+        {kategori && <input type="hidden" name="kategori" value={kategori} />}
       </form>
+
+      {/* Chip kategori — scroll horizontal */}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+        {[{ kategori: '' }, ...kategoris].map((k) => {
+          const active = kategori === k.kategori
+          return (
+            <Link
+              key={k.kategori || 'all'}
+              href={chipHref(k.kategori)}
+              className="hud-clip-sm shrink-0 whitespace-nowrap px-3.5 py-2 text-[12.5px] font-semibold"
+              style={
+                active
+                  ? { color: '#fff', background: 'rgba(92,132,255,0.15)', border: '1px solid rgba(92,132,255,0.55)' }
+                  : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.2)' }
+              }
+            >
+              {k.kategori === '' ? 'Semua' : k.kategori}
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 

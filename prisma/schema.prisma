@@ -79,6 +79,9 @@ model Peminjaman {
   // Dipakai banner "catatan dari admin" di dashboard siswa.
   catatanDibacaAt     DateTime? @map("catatan_dibaca_at")
   alasanPembatalan    String?   @map("alasan_pembatalan")
+  // Siswa menyembunyikan peminjaman selesai/batal dari tampilannya sendiri;
+  // data tetap utuh & terlihat oleh admin.
+  disembunyikanSiswa  Boolean   @default(false) @map("disembunyikan_siswa")
   verifiedBy          Int?      @map("verified_by")
   returnedBy          Int?      @map("returned_by")
   cancelledBy         Int?      @map("cancelled_by")
@@ -137,6 +140,17 @@ model LabItem {
 model Pengaturan {
   id            Int      @id @default(autoincrement())
   bookingDibuka Boolean  @default(true) @map("booking_dibuka")
+  // Jam operasional peminjaman (WIB, 0-23). Default 06:00-17:00.
+  jamBuka       Int      @default(6)  @map("jam_buka")
+  jamTutup      Int      @default(17) @map("jam_tutup")
+  // Aturan peminjaman.
+  maxUnitSiswa  Int      @default(3)  @map("max_unit_siswa")
+  maxHari       Int      @default(1)  @map("max_hari")
+  // Verifikasi otomatis: pengajuan baru langsung "dipinjam" tanpa perlu approve.
+  verifikasiOtomatis      Boolean @default(false) @map("verifikasi_otomatis")
+  peringatanKeterlambatan Boolean @default(true)  @map("peringatan_keterlambatan")
+  // Boleh pilih >1 unit dari alat/jenis yang sama dalam satu pengajuan.
+  bolehMultiUnit          Boolean @default(false) @map("boleh_multi_unit")
   diubahOleh    Int?     @map("diubah_oleh")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

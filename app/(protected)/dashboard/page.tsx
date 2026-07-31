@@ -1,11 +1,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ActivityChart } from '@/components/dashboard/ActivityChart'
-import { BookingToggle } from '@/components/dashboard/BookingToggle'
-import { CatatanAdminBanner } from '@/components/dashboard/CatatanAdminBanner'
-import { getBookingDibuka } from '@/lib/pengaturan'
+import { NotifikasiLoginPopup } from '@/components/dashboard/NotifikasiLoginPopup'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { formatDate } from '@/lib/utils'
+import { formatDate, bersihkanCatatanSiswa } from '@/lib/utils'
 import { Clock } from 'lucide-react'
 import Link from 'next/link'
 
@@ -45,7 +43,7 @@ export default async function DashboardPage() {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const [totalAlat, totalUser, peminjamanAktif, menungguVerifikasi, stokRendah, dikembalikanBulanIni, recentPeminjaman, chartData, bookingDibuka] =
+    const [totalAlat, totalUser, peminjamanAktif, menungguVerifikasi, stokRendah, dikembalikanBulanIni, recentPeminjaman, chartData] =
       await Promise.all([
         prisma.alat.count(),
         prisma.user.count({ where: { role: 'siswa' } }),
@@ -60,7 +58,6 @@ export default async function DashboardPage() {
           include: { user: { select: { name: true } }, details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
         }),
         getChartData(),
-        getBookingDibuka(),
       ])
 
     const stats = [
@@ -80,9 +77,6 @@ export default async function DashboardPage() {
             Selamat datang, {session?.user.name}
           </p>
         </div>
-
-        {/* saklar buka/tutup booking */}
-        <BookingToggle initial={bookingDibuka} />
 
         {/* stat grid */}
         <div
@@ -122,7 +116,7 @@ export default async function DashboardPage() {
             <ActivityChart data={chartData} />
           </div>
 
-          <div className="hud-panel p-5">
+          <div className="hidden hud-panel p-5 md:block">
             <div className="mb-3.5 flex items-center justify-between">
               <h2 className="hud-label text-[12px]" style={{ color: '#c3ccd6' }}>
                 Peminjaman Terbaru
@@ -209,7 +203,7 @@ export default async function DashboardPage() {
     }),
     prisma.peminjaman.count({ where: { userId, status: 'menunggu_verifikasi' } }),
     prisma.peminjaman.findMany({
-      where: { userId },
+      where: { userId, disembunyikanSiswa: false },
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: { details: { include: { unit: { select: { kode: true, alat: { select: { nama: true } } } } } } },
@@ -241,15 +235,19 @@ export default async function DashboardPage() {
     }),
   ])
 
-  const catatanItems = catatanBelumDibaca.map((p) => ({
-    id: p.id,
-    catatan: p.catatanPengembalian,
-    tanggalKembali: p.tanggalKembali ? formatDate(p.tanggalKembali) : null,
-    alat: p.details.map((d) => `${d.unit.alat.nama} (${d.unit.kode})`).join(', '),
-    kerusakan: p.details
-      .filter((d) => d.kerusakan)
-      .map((d) => ({ kode: d.unit.kode, catatan: d.kerusakan as string })),
-  }))
+  const catatanItems = catatanBelumDibaca
+    .map((p) => ({
+      id: p.id,
+      // Buang anotasi internal admin agar tidak terlihat siswa.
+      catatan: bersihkanCatatanSiswa(p.catatanPengembalian),
+      tanggalKembali: p.tanggalKembali ? formatDate(p.tanggalKembali) : null,
+      alat: p.details.map((d) => `${d.unit.alat.nama} (${d.unit.kode})`).join(', '),
+      kerusakan: p.details
+        .filter((d) => d.kerusakan)
+        .map((d) => ({ kode: d.unit.kode, catatan: d.kerusakan as string })),
+    }))
+    // Sisakan hanya yang punya isi untuk siswa (catatan bersih atau kerusakan).
+    .filter((it) => it.catatan || it.kerusakan.length > 0)
 
   const siswaStats = [
     { title: 'Sedang Dipinjam', value: peminjamanAktif.length, color: '#3b82f6' },
@@ -266,17 +264,14 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <CatatanAdminBanner items={catatanItems} />
+      <NotifikasiLoginPopup items={catatanItems} />
 
       {/* stat grid */}
-      <div
-        className="mb-[22px] grid gap-[13px]"
-        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}
-      >
+      <div className="mb-[22px] grid grid-cols-2 gap-[13px] sm:grid-cols-3">
         {siswaStats.map((s) => (
           <div
             key={s.title}
-            className="hud-panel hud-accent-top hud-rise p-5"
+            className="hud-panel hud-accent-top hud-rise p-4 sm:p-5"
             style={{
               background: `linear-gradient(160deg, ${s.color}12, rgba(255,255,255,0.012))`,
               border: `1px solid ${s.color}38`,
@@ -294,16 +289,16 @@ export default async function DashboardPage() {
       </div>
 
       {/* quick actions */}
-      <div className="mb-[22px] flex flex-wrap gap-2.5">
+      <div className="mb-[22px] flex gap-2.5">
         <Link
           href="/peminjaman/baru"
-          className="hud-btn-primary inline-flex items-center gap-2 px-[22px] py-3 text-[12px]"
+          className="hud-btn-primary inline-flex flex-1 items-center justify-center gap-2 px-[22px] py-3 text-[12px] sm:flex-none"
         >
           + BUAT PEMINJAMAN
         </Link>
         <Link
           href="/alat"
-          className="hud-btn-ghost inline-flex items-center gap-2 px-[22px] py-3 text-[12px]"
+          className="hud-btn-ghost inline-flex flex-1 items-center justify-center gap-2 px-[22px] py-3 text-[12px] sm:flex-none"
         >
           LIHAT ALAT
         </Link>
@@ -338,8 +333,8 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* history */}
-      <div className="hud-panel hud-rise p-5">
+      {/* history — disembunyikan di HP untuk siswa (tetap tampil di desktop) */}
+      <div className="hidden hud-panel hud-rise p-5 md:block">
         <div className="mb-3.5 flex items-center justify-between">
           <h2 className="hud-label text-[12px]" style={{ color: '#c3ccd6' }}>Riwayat Peminjaman</h2>
           <Link href="/peminjaman" className="text-[12px] font-semibold" style={{ color: '#5c84ff' }}>

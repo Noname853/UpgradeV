@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { formatDate, formatDateTime } from '@/lib/utils'
+import { formatDate, formatDateTime, bersihkanCatatanSiswa } from '@/lib/utils'
 import { ArrowLeft, Package, User, FileText, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { PeminjamanActions } from './PeminjamanActions'
@@ -234,8 +234,8 @@ export default async function PeminjamanDetailPage({ params }: { params: Promise
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}
       >
         <div className="space-y-3.5">
-          {peminjaman.status === 'dikembalikan' && peminjaman.catatanPengembalian && (
-            <CatatanPengembalian catatan={peminjaman.catatanPengembalian} />
+          {peminjaman.status === 'dikembalikan' && bersihkanCatatanSiswa(peminjaman.catatanPengembalian) && (
+            <CatatanPengembalian catatan={bersihkanCatatanSiswa(peminjaman.catatanPengembalian)!} />
           )}
           {/* Membuka detail = membaca catatan (umum maupun kerusakan per unit,
               yang tampil merah di kartu unit di bawah). */}

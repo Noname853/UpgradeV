@@ -220,6 +220,23 @@ export default async function AlatDetailPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
+      {tersedia > 0 && (
+        <Link
+          href={`/peminjaman/baru?${new URLSearchParams({
+            alatId: String(alat.id),
+            nama: alat.nama,
+            kategori: alat.kategori,
+            total: String(total),
+            tersedia: String(tersedia),
+            dipinjam: String(dipinjam),
+            rusak: String(rusak),
+          })}`}
+          className="hud-btn-primary mb-4 flex w-full items-center justify-center gap-2 py-3 text-[12px] md:w-auto md:px-7"
+        >
+          + PINJAM ALAT INI
+        </Link>
+      )}
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-4" style={{ minWidth: 0 }}>
           {infoSection}

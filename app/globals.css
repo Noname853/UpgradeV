@@ -193,6 +193,46 @@ body {
   .hud-rise, .hud-blink { animation: none !important; }
 }
 
+/* =========================================================================
+   Mobile shell — app bar, bottom nav + FAB, drawer, bottom sheet.
+   Dipakai hanya di layar HP (lihat komponen layout). Desktop tetap sidebar.
+   ========================================================================= */
+@keyframes hudScreenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes hudSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes hudDrawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes hudFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hudPulseRing { 0% { transform: scale(0.85); opacity: 0.7; } 100% { transform: scale(1.5); opacity: 0; } }
+
+/* Animasi transisi antar-layar untuk konten mobile (keyed per-route) */
+.hud-screen-in { animation: hudScreenIn 0.3s ease both; }
+
+/* Tekan tombol (feedback sentuh) */
+.hud-press { transition: transform 0.12s ease, filter 0.12s ease; }
+.hud-press:active { transform: scale(0.94); }
+.hud-lift { transition: transform 0.16s ease, border-color 0.16s ease; }
+.hud-lift:active { transform: scale(0.985); }
+
+/* Bottom sheet mobile */
+.hud-sheet {
+  background: linear-gradient(180deg, #12131b, #0a0b10);
+  border-top: 1px solid rgba(92, 132, 255, 0.3);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.5);
+  animation: hudSheetUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  padding: 10px 20px calc(24px + env(safe-area-inset-bottom));
+}
+.hud-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 0 auto 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-screen-in, .hud-sheet { animation: none !important; }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

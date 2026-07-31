@@ -48,7 +48,6 @@ export default function BuatPeminjamanPage() {
   const router = useRouter()
   const [items, setItems] = useState<Item[]>([])
   const [keperluan, setKeperluan] = useState('')
-  const [catatan, setCatatan] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searching, setSearching] = useState(false)
@@ -60,6 +59,8 @@ export default function BuatPeminjamanPage() {
   const [kelompok, setKelompok] = useState<KelompokInfo | null>(null)
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
   const [scanOpen, setScanOpen] = useState(false)
+  const [jam, setJam] = useState({ buka: JAM_BUKA, tutup: JAM_TUTUP })
+  const [multiUnit, setMultiUnit] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -99,6 +100,10 @@ export default function BuatPeminjamanPage() {
       .then((d) => {
         setBookingDibuka(Boolean(d.bookingDibuka))
         setJamOperasional(d.dalamJamOperasional !== false)
+        if (typeof d.jamBuka === 'number' && typeof d.jamTutup === 'number') {
+          setJam({ buka: d.jamBuka, tutup: d.jamTutup })
+        }
+        setMultiUnit(Boolean(d.bolehMultiUnit))
       })
       .catch(() => setBookingDibuka(true))
   }, [])
@@ -109,6 +114,37 @@ export default function BuatPeminjamanPage() {
         setKelompok({ kelompok: d.kelompok, anggotaKelompok: d.anggotaKelompok ?? [] })
       }
     })
+  }, [])
+
+  // Datang dari FAB "scan" → langsung buka kamera scan (tanpa harus menekan
+  // tombol Scan di form dulu). Unit hasil scan tetap masuk keranjang di sini.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scan') === '1') {
+      // Tunda ke tick berikutnya agar tidak setState sinkron di dalam effect.
+      const t = setTimeout(() => setScanOpen(true), 0)
+      return () => clearTimeout(t)
+    }
+  }, [])
+
+  // Datang dari "Pinjam Alat Ini" di detail alat → langsung tambahkan alatnya
+  // ke keranjang, jadi siswa tak perlu mencari ulang.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sp = new URLSearchParams(window.location.search)
+    const alatId = parseInt(sp.get('alatId') ?? '')
+    if (!Number.isFinite(alatId) || alatId <= 0) return
+    const alat: AlatOption = {
+      id: alatId,
+      nama: sp.get('nama') ?? 'Alat',
+      kategori: sp.get('kategori') ?? '',
+      totalUnit: parseInt(sp.get('total') ?? '0') || 0,
+      tersedia: parseInt(sp.get('tersedia') ?? '0') || 0,
+      dipinjam: parseInt(sp.get('dipinjam') ?? '0') || 0,
+      rusak: parseInt(sp.get('rusak') ?? '0') || 0,
+    }
+    const t = setTimeout(() => { pickAlat(alat) }, 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -143,13 +179,22 @@ export default function BuatPeminjamanPage() {
     )
   }
 
-  // Maks 1 unit per alat: memilih unit lain menggantikan pilihan sebelumnya.
+  // Pilih unit. Default maks 1/alat (pilihan diganti). Bila `multiUnit` aktif,
+  // boleh pilih beberapa unit dari alat sama (toggle tambah/hapus).
   // Unit hasil scan QR tidak bisa diubah lewat grid.
   function toggleUnit(alatId: number, unitId: number) {
     setItems((prev) =>
       prev.map((it) => {
         if (it.alat.id !== alatId || it.scanned) return it
         const has = it.selectedUnitIds.includes(unitId)
+        if (multiUnit) {
+          return {
+            ...it,
+            selectedUnitIds: has
+              ? it.selectedUnitIds.filter((id) => id !== unitId)
+              : [...it.selectedUnitIds, unitId],
+          }
+        }
         return { ...it, selectedUnitIds: has ? [] : [unitId] }
       }),
     )
@@ -176,11 +221,17 @@ export default function BuatPeminjamanPage() {
         )
         return 'duplicate'
       }
-      // Maks 1 unit per alat: alat ini sudah punya unit terpilih.
-      if (existing.selectedUnitIds.length > 0) return 'limit'
+      // Maks 1 unit per alat (kecuali multiUnit aktif → boleh tambah).
+      if (!multiUnit && existing.selectedUnitIds.length > 0) return 'limit'
       setItems((prev) =>
         prev.map((it) =>
-          it.alat.id === unit.alat.id ? { ...it, selectedUnitIds: [unit.id], scanned: true } : it,
+          it.alat.id === unit.alat.id
+            ? {
+                ...it,
+                selectedUnitIds: multiUnit ? [...it.selectedUnitIds, unit.id] : [unit.id],
+                scanned: true,
+              }
+            : it,
         ),
       )
       return 'added'
@@ -231,7 +282,6 @@ export default function BuatPeminjamanPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         keperluan,
-        catatan: catatan || null,
         items: items.map((it) => ({
           unitIds: it.selectedUnitIds,
           keterangan: it.keterangan || null,
@@ -306,7 +356,7 @@ export default function BuatPeminjamanPage() {
             <p className="text-[14px] font-semibold" style={{ color: '#fde68a' }}>
               {jamOperasional
                 ? 'Pendaftaran via pilih daftar sedang ditutup'
-                : `Di luar jam operasional (${String(JAM_BUKA).padStart(2, '0')}:00–${String(JAM_TUTUP).padStart(2, '0')}:00)`}
+                : `Di luar jam operasional (${String(jam.buka).padStart(2, '0')}:00–${String(jam.tutup).padStart(2, '0')}:00)`}
             </p>
             <p className="mt-0.5 text-[13px]" style={{ color: '#eab308' }}>
               Kamu masih bisa meminjam dengan <strong>scan QR unit</strong> langsung di lab.
@@ -434,7 +484,9 @@ export default function BuatPeminjamanPage() {
                     </p>
                   ) : (
                     <p className="mb-2.5 text-[12px]" style={{ color: '#8a97a3' }}>
-                      Pilih 1 unit yang ingin dipinjam (maksimal 1 unit per alat):
+                      {multiUnit
+                        ? 'Pilih unit yang ingin dipinjam (boleh lebih dari 1 unit per alat):'
+                        : 'Pilih 1 unit yang ingin dipinjam (maksimal 1 unit per alat):'}
                     </p>
                   )}
                   {item.loadingUnits ? (
@@ -558,21 +610,11 @@ export default function BuatPeminjamanPage() {
                     style={{ color: '#c3ccd6' }}
                   >
                     <Clock size={15} style={{ color: '#8b98a5' }} />
-                    <span>Hari ini pukul {String(JAM_TUTUP).padStart(2, '0')}:00</span>
+                    <span>Hari ini pukul {String(jam.tutup).padStart(2, '0')}:00</span>
                   </div>
                   <p className="mt-1 text-[12px]" style={{ color: '#8b98a5' }}>
-                    Alat wajib dikembalikan paling lambat pukul {String(JAM_TUTUP).padStart(2, '0')}:00 di hari yang sama.
+                    Alat wajib dikembalikan paling lambat pukul {String(jam.tutup).padStart(2, '0')}:00 di hari yang sama.
                   </p>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[13px]" style={{ color: '#b3bdc7' }}>Catatan</label>
-                  <textarea
-                    rows={3}
-                    value={catatan}
-                    onChange={(e) => setCatatan(e.target.value)}
-                    placeholder="Catatan tambahan..."
-                    className="hud-input w-full resize-y px-3 py-2.5 text-[14px]"
-                  />
                 </div>
               </div>
             </div>

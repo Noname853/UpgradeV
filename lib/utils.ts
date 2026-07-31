@@ -27,6 +27,16 @@ export function formatDateTime(date: Date | string | null | undefined): string {
   })
 }
 
+// Bersihkan catatan pengembalian sebelum ditampilkan ke SISWA: buang anotasi
+// internal admin seperti "[Diproses tanpa scan lengkap — alasan: …]" yang hanya
+// relevan untuk riwayat/verifikator. Mengembalikan null bila kosong setelah
+// dibersihkan (mis. catatan yang isinya cuma anotasi itu).
+export function bersihkanCatatanSiswa(catatan: string | null | undefined): string | null {
+  if (!catatan) return null
+  const bersih = catatan.replace(/\s*\[Diproses tanpa scan lengkap[^\]]*\]/gi, '').trim()
+  return bersih || null
+}
+
 export function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     menunggu_verifikasi: 'Menunggu Verifikasi',

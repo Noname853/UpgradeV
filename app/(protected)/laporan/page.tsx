@@ -289,8 +289,50 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
         </div>
       </div>
 
-      {/* Table */}
-      <div className="hud-panel overflow-hidden">
+      {/* Mobile: daftar kartu peminjaman */}
+      <div className="flex flex-col gap-2.5 md:hidden">
+        {peminjamans.map((p) => (
+          <div key={p.id} className="hud-panel p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[13px] font-bold" style={{ color: '#8a97a3' }}>#{p.id}</span>
+              <StatusBadge status={p.status} />
+            </div>
+            <p className="text-[14.5px] font-semibold" style={{ color: '#e8edf2' }}>{p.user.name}</p>
+            <p className="text-[12px]" style={{ color: '#6b7785' }}>{p.user.kelas ?? '-'}</p>
+            <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: '#c3ccd6' }}>
+              {p.details.map((d) => `${d.unit.alat.nama} (${d.unit.kode})`).join(', ')}
+            </p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]" style={{ color: '#8a97a3' }}>
+              <span>Pinjam: {formatDate(p.tanggalPinjam)}</span>
+              <span className="inline-flex items-center gap-1.5">
+                Kembali: {formatDate(p.tanggalKembali)}
+                {isTelat(p, now) && (
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    style={{ color: '#fb923c', background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.35)' }}
+                  >
+                    Telat
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+        ))}
+        {peminjamans.length === 0 && (
+          <div className="hud-panel flex flex-col items-center justify-center py-12" style={{ color: '#6b7785' }}>
+            <FileBarChart2 className="mb-2 h-10 w-10" />
+            <p>Tidak ada data laporan</p>
+          </div>
+        )}
+        {total > 0 && (
+          <p className="px-1 py-1 text-[12px]" style={{ color: '#6b7785' }}>
+            Menampilkan {(page - 1) * PER_HALAMAN + 1}–{Math.min(page * PER_HALAMAN, total)} dari {total} peminjaman
+          </p>
+        )}
+      </div>
+
+      {/* Desktop: tabel */}
+      <div className="hidden hud-panel overflow-hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-max text-sm">
             <thead>

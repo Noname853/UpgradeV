@@ -32,14 +32,12 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
   // Verifikasi fisik via scan QR: unit harus discan satu per satu sebelum
   // pengembalian bisa diproses — barang tertukar ketahuan di sini.
   const [verified, setVerified] = useState<Set<number>>(new Set())
-  const [skipReason, setSkipReason] = useState('')
   const [scanMsg, setScanMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
   function openReturn() {
     setRusak({})
     setCatatan('')
     setVerified(new Set())
-    setSkipReason('')
     setScanMsg(null)
     setReturnOpen(true)
   }
@@ -63,10 +61,19 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
     setScanMsg({ kind: 'ok', text: `${unit.kode} cocok — ${unit.nama} terverifikasi kembali.` })
   }
 
-  function skipScan() {
-    const alasan = prompt('Alasan memproses tanpa scan lengkap (wajib):')
-    if (!alasan || !alasan.trim()) return
-    setSkipReason(alasan.trim())
+  // Checklist manual: admin bisa menandai unit "sudah kembali" cukup dengan
+  // mengetuk (tanpa scan, tanpa wajib alasan). Scan QR tetap berfungsi.
+  function toggleVerified(unitId: number) {
+    setVerified((prev) => {
+      const next = new Set(prev)
+      if (next.has(unitId)) next.delete(unitId)
+      else next.add(unitId)
+      return next
+    })
+  }
+
+  function centangSemua() {
+    setVerified(new Set(units.map((u) => u.unitId)))
   }
 
   // Alat scan fisik (mode HID keyboard) mengetik kode + Enter dengan jeda
@@ -133,13 +140,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
     }))
     // Alasan skip ikut tercatat di catatan pengembalian agar terlihat di
     // riwayat (dan di banner siswa) — bukan jalan pintas diam-diam.
-    const catatanFinal = [
-      catatan.trim(),
-      skipReason ? `[Diproses tanpa scan lengkap — alasan: ${skipReason}]` : '',
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .slice(0, 500)
+    const catatanFinal = catatan.trim().slice(0, 500)
     doAction('return', { catatan: catatanFinal || undefined, kerusakan })
   }
 
@@ -261,10 +262,21 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </span>
             </div>
 
+            {verified.size < units.length && (
+              <button
+                type="button"
+                onClick={centangSemua}
+                className="mb-3 text-[11.5px] font-semibold underline"
+                style={{ color: '#5c84ff' }}
+              >
+                Centang semua sudah kembali
+              </button>
+            )}
+
             <div className="mb-3 flex max-h-[34vh] flex-col gap-2 overflow-y-auto">
               {units.map((u) => {
                 const isVerified = verified.has(u.unitId)
-                const rusakAllowed = isVerified || !!skipReason
+                const rusakAllowed = isVerified
                 const checked = u.unitId in rusak
                 return (
                   <div
@@ -282,16 +294,20 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
                     }}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px]"
+                      <button
+                        type="button"
+                        onClick={() => toggleVerified(u.unitId)}
+                        aria-pressed={isVerified}
+                        title={isVerified ? 'Batalkan tanda kembali' : 'Tandai sudah kembali'}
+                        className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-[12px]"
                         style={
                           isVerified
-                            ? { color: '#22c55e', border: '2px solid #22c55e' }
+                            ? { color: '#22c55e', border: '2px solid #22c55e', background: 'rgba(34,197,94,0.12)' }
                             : { color: '#6b7785', border: '2px dashed rgba(99,102,241,0.4)' }
                         }
                       >
-                        {isVerified ? <Check className="h-3.5 w-3.5" /> : '?'}
-                      </span>
+                        {isVerified ? <Check className="h-3.5 w-3.5" /> : ''}
+                      </button>
                       <span className="min-w-0 flex-1">
                         <span className="text-[13.5px] font-semibold" style={{ color: '#e8edf2' }}>{u.nama}</span>
                         <span
@@ -301,7 +317,7 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
                           {u.kode}
                         </span>
                         <span className="mt-0.5 block text-[11px]" style={{ color: isVerified ? '#4ade80' : '#6b7785' }}>
-                          {isVerified ? 'Terverifikasi via scan' : 'Belum discan'}
+                          {isVerified ? 'Sudah dikembalikan' : 'Ketuk untuk tandai kembali (atau scan)'}
                         </span>
                       </span>
                     </div>
@@ -373,26 +389,6 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
               </p>
             )}
 
-            {skipReason && (
-              <p
-                className="mb-3 px-3 py-2 text-[12px] leading-relaxed hud-clip-sm"
-                style={{ color: '#fbbf24', background: 'rgba(234,179,8,0.07)', border: '1px solid rgba(234,179,8,0.35)' }}
-              >
-                ⚠️ Diproses tanpa verifikasi scan lengkap — alasan: <b>{skipReason}</b>. Tercatat di catatan
-                pengembalian.
-              </p>
-            )}
-
-            {verified.size < units.length && !skipReason && (
-              <button
-                type="button"
-                onClick={skipScan}
-                className="mb-3 text-[11.5px] underline"
-                style={{ color: '#6b7785' }}
-              >
-                Proses tanpa scan lengkap…
-              </button>
-            )}
           </div>
 
           <div
@@ -409,10 +405,10 @@ export function PeminjamanActions({ id, status, isAdmin, isOwner, units = [] }: 
             </button>
             <button
               onClick={submitReturn}
-              disabled={!!loading || (verified.size < units.length && !skipReason)}
+              disabled={!!loading || verified.size < units.length}
               className="flex-1 px-3.5 py-2.5 text-[13px] font-semibold transition hud-clip-sm disabled:cursor-not-allowed disabled:opacity-40"
               style={{ color: '#5c84ff', background: 'rgba(92,132,255,0.12)', border: '1px solid rgba(92,132,255,0.3)' }}
-              title={verified.size < units.length && !skipReason ? 'Scan semua unit dulu' : undefined}
+              title={verified.size < units.length ? 'Centang atau scan semua unit dulu' : undefined}
             >
               {loading === 'return' ? 'Memproses...' : 'Proses Pengembalian'}
             </button>

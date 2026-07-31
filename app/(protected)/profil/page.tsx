@@ -2,6 +2,10 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { ProfilForm } from './ProfilForm'
+import { KeluarButton } from './KeluarButton'
+import { BookingToggle } from '@/components/dashboard/BookingToggle'
+import { getPengaturan } from '@/lib/pengaturan'
+import { PengaturanForm } from './PengaturanForm'
 
 export default async function ProfilPage() {
   const session = await auth()
@@ -22,22 +26,38 @@ export default async function ProfilPage() {
   }
 
   const roleLabel = user.role === 'siswa' ? 'Siswa' : user.role
+  const isAdmin = user.role === 'admin'
+  const pengaturan = isAdmin ? await getPengaturan() : null
 
   return (
     <div>
-      <div className="mb-6 hud-rise">
-        <h1 className="hud-title" style={{ fontSize: 24 }}>Profil Saya</h1>
-        <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>
-          Kelola data akun &amp; kelompok
-        </p>
-      </div>
+      {isAdmin ? (
+        <>
+          {/* Mobile admin: halaman ini berfungsi sebagai Pengaturan */}
+          <div className="mb-6 hud-rise md:hidden">
+            <h1 className="hud-title" style={{ fontSize: 24 }}>Pengaturan</h1>
+            <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>Kelola pengaturan sistem</p>
+          </div>
+          <div className="mb-6 hidden hud-rise md:block">
+            <h1 className="hud-title" style={{ fontSize: 24 }}>Profil Saya</h1>
+            <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>Kelola data akun</p>
+          </div>
+        </>
+      ) : (
+        <div className="mb-6 hud-rise">
+          <h1 className="hud-title" style={{ fontSize: 24 }}>Profil Saya</h1>
+          <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>
+            Kelola data akun &amp; kelompok
+          </p>
+        </div>
+      )}
 
       <div
         className="grid gap-4"
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}
       >
-        {/* account */}
-        <div className="hud-panel hud-accent-top hud-rise p-[22px]">
+        {/* account — untuk admin disembunyikan di mobile (tampil hanya desktop) */}
+        <div className={`hud-panel hud-accent-top hud-rise p-[22px]${isAdmin ? ' hidden md:block' : ''}`}>
           <div className="mb-5 flex items-center gap-3.5">
             <div
               className="hud-hex flex shrink-0 items-center justify-center"
@@ -83,7 +103,26 @@ export default async function ProfilPage() {
           </div>
         </div>
 
-        <ProfilForm kelompok={user.kelompok} anggota={anggota} />
+        {/* Kelompok hanya untuk siswa — admin tidak punya kelompok/anggota. */}
+        {!isAdmin && <ProfilForm kelompok={user.kelompok} anggota={anggota} />}
+      </div>
+
+      {/* Pengaturan sistem (admin) */}
+      {isAdmin && pengaturan && (
+        <div className="mt-6 hud-rise">
+          <h2 className="hud-title mb-3" style={{ fontSize: 16 }}>Pengaturan Sistem</h2>
+
+          {/* Sesi peminjaman */}
+          <BookingToggle initial={pengaturan.bookingDibuka} />
+
+          {/* Jam operasional, aturan, otomatisasi — editable */}
+          <PengaturanForm initial={pengaturan} />
+        </div>
+      )}
+
+      {/* keluar */}
+      <div className="mt-4 hud-rise">
+        <KeluarButton isAdmin={user.role === 'admin'} />
       </div>
     </div>
   )
