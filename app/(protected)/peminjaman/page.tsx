@@ -7,6 +7,8 @@ import { Plus, PackageCheck, Search, Archive, X, Users } from 'lucide-react'
 import Link from 'next/link'
 import { ScanPengembalianButton } from '@/components/peminjaman/ScanPengembalianButton'
 import { PeminjamanSheetList } from '@/components/peminjaman/PeminjamanSheetList'
+import { Pagination } from '@/components/shared/Pagination'
+import { StatusPoller } from '@/components/peminjaman/StatusPoller'
 
 const STATUS_TABS = [
   { label: 'Semua', value: '' },
@@ -456,33 +458,21 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
           )}
         </div>
 
-        {pages > 1 && (
-          <div className="mt-[18px] flex flex-wrap justify-center gap-2">
-            {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
-              const active = p === page
-              return (
-                <Link
-                  key={p}
-                  href={`/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat, page: String(p) })}`}
-                  className="min-w-[40px] px-3 py-2 text-center text-[13px] hud-clip-sm"
-                  style={
-                    active
-                      ? { color: '#fff', background: 'linear-gradient(135deg, #2563eb, #9333ea)' }
-                      : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
-                  }
-                >
-                  {p}
-                </Link>
-              )
-            })}
-          </div>
-        )}
+        <Pagination
+          page={page}
+          pages={pages}
+          hrefs={Array.from(
+            { length: pages },
+            (_, i) => `/peminjaman${buildQueryString({ status, search, kelas: kelasFilter, tingkat, page: String(i + 1) })}`,
+          )}
+        />
       </div>
     )
   }
 
   return (
     <div>
+      <StatusPoller />
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3 hud-rise">
         <div>
           <h1 className="hud-title" style={{ fontSize: 24 }}>Peminjaman Saya</h1>
@@ -574,27 +564,14 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         )}
       </div>
 
-      {pages > 1 && (
-        <div className="mt-[18px] flex flex-wrap justify-center gap-2">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
-            const active = p === page
-            return (
-              <Link
-                key={p}
-                href={`/peminjaman?${new URLSearchParams({ ...(status && { status }), page: String(p) })}`}
-                className="min-w-[40px] px-3 py-2 text-center text-[13px] hud-clip-sm"
-                style={
-                  active
-                    ? { color: '#fff', background: 'linear-gradient(135deg, #2563eb, #9333ea)' }
-                    : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
-                }
-              >
-                {p}
-              </Link>
-            )
-          })}
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pages={pages}
+        hrefs={Array.from(
+          { length: pages },
+          (_, i) => `/peminjaman?${new URLSearchParams({ ...(status && { status }), page: String(i + 1) })}`,
+        )}
+      />
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
 import { parseLaporanFilter, isTelat } from '@/lib/laporan'
 import { FileBarChart2, Download, TrendingUp, Wrench } from 'lucide-react'
-import Link from 'next/link'
+import { Pagination } from '@/components/shared/Pagination'
 
 interface SearchParams {
   status?: string
@@ -125,14 +125,21 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center gap-3 hud-rise">
-        <div className="min-w-0 flex-1">
-          <h1 className="hud-title" style={{ fontSize: 26 }}>Laporan Peminjaman</h1>
-          <p className="mt-1.5 text-[15px]" style={{ color: '#8a97a3' }}>
-            Rekap peminjaman, alat terpopuler, dan catatan kerusakan
-          </p>
+      <div className="mb-6 hud-rise">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="hud-title" style={{ fontSize: 26 }}>Laporan Peminjaman</h1>
+            <p className="mt-1.5 text-[15px]" style={{ color: '#8a97a3' }}>
+              Rekap peminjaman, alat terpopuler, dan catatan kerusakan
+            </p>
+          </div>
+          <a href={exportHref} className="hud-btn-primary hidden shrink-0 items-center gap-2 px-[18px] py-2.5 text-[12px] md:flex">
+            <Download className="h-4 w-4" />
+            EXPORT EXCEL
+          </a>
         </div>
-        <a href={exportHref} className="hud-btn-primary flex items-center gap-2 px-[18px] py-2.5 text-[12px]">
+        {/* Tombol export mobile — baris terpisah supaya tidak niban judul */}
+        <a href={exportHref} className="hud-btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-[12px] md:hidden">
           <Download className="h-4 w-4" />
           EXPORT EXCEL
         </a>
@@ -389,24 +396,11 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
         )}
       </div>
 
-      {pages > 1 && (
-        <div className="mt-[18px] flex flex-wrap justify-center gap-2">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={buildHref({ page: String(p) })}
-              className="hud-clip-sm px-3 py-1.5 text-[13px] transition"
-              style={
-                p === page
-                  ? { color: '#fff', background: 'linear-gradient(135deg, #2563eb, #9333ea)' }
-                  : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
-              }
-            >
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pages={pages}
+        hrefs={Array.from({ length: pages }, (_, i) => buildHref({ page: String(i + 1) }))}
+      />
     </div>
   )
 }

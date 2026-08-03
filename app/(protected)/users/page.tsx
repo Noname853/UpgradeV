@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils'
 import { Users, Plus, Search } from 'lucide-react'
 import Link from 'next/link'
 import { DeleteUserButton } from './DeleteUserButton'
+import { Pagination } from '@/components/shared/Pagination'
 
 interface SearchParams {
   search?: string
@@ -265,24 +266,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         )}
       </div>
 
-      {pages > 1 && (
-        <div className="mt-[18px] flex justify-center gap-2">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={buildHref({ page: String(p) })}
-              className="hud-clip-sm px-3 py-1.5 text-[13px] transition"
-              style={
-                p === page
-                  ? { color: '#fff', background: 'linear-gradient(135deg, #2563eb, #9333ea)' }
-                  : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
-              }
-            >
-              {p}
-            </Link>
-          ))}
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pages={pages}
+        hrefs={Array.from({ length: pages }, (_, i) => buildHref({ page: String(i + 1) }))}
+      />
     </div>
   )
 }

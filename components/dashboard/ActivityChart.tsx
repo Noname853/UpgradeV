@@ -1,6 +1,18 @@
 'use client'
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import {
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ComposedChart,
+  Cell,
+  LabelList,
+} from 'recharts'
 
 interface ChartData {
   bulan: string
@@ -8,49 +20,85 @@ interface ChartData {
   dikembalikan: number
 }
 
+// Grafik aktivitas harian gaya "dashboard modern": batang membulat untuk
+// peminjaman, garis untuk dikembalikan, dan batang HARI INI (data terakhir)
+// disorot lebih terang + diberi label angka.
 export function ActivityChart({ data }: { data: ChartData[] }) {
+  const lastIndex = data.length - 1
+
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+      <ComposedChart data={data} margin={{ top: 22, right: 10, left: -20, bottom: 0 }}>
         <defs>
-          <linearGradient id="colorPeminjaman" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#0070f3" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#0070f3" stopOpacity={0} />
+          <linearGradient id="barPeminjaman" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6f97ff" />
+            <stop offset="100%" stopColor="#3f63d6" />
           </linearGradient>
-          <linearGradient id="colorDikembalikan" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#7928ca" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#7928ca" stopOpacity={0} />
+          <linearGradient id="barToday" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8ab4ff" />
+            <stop offset="100%" stopColor="#5c84ff" />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-        <XAxis dataKey="bulan" tick={{ fill: '#8a8a8a', fontSize: 12 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: '#8a8a8a', fontSize: 12 }} axisLine={false} tickLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
+        <XAxis
+          dataKey="bulan"
+          tick={{ fill: '#8a8a8a', fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
+          interval="preserveStartEnd"
+        />
+        <YAxis tick={{ fill: '#8a8a8a', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
         <Tooltip
+          cursor={{ fill: 'rgba(92,132,255,0.08)' }}
           contentStyle={{
             backgroundColor: '#111111',
             border: '1px solid #1f1f1f',
             borderRadius: '8px',
             color: '#ffffff',
           }}
+          labelFormatter={(v) => `Tanggal ${v}`}
         />
         <Legend wrapperStyle={{ color: '#8a8a8a', fontSize: 12 }} />
-        <Area
-          type="monotone"
-          dataKey="peminjaman"
-          name="Peminjaman"
-          stroke="#0070f3"
-          strokeWidth={2}
-          fill="url(#colorPeminjaman)"
-        />
-        <Area
+        <Bar dataKey="peminjaman" name="Peminjaman" fill="#5c84ff" radius={[4, 4, 0, 0]} maxBarSize={26}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={i === lastIndex ? 'url(#barToday)' : 'url(#barPeminjaman)'} />
+          ))}
+          <LabelList
+            dataKey="peminjaman"
+            content={(p) => {
+              const { x = 0, y = 0, width = 0, index = 0, value } = p as {
+                x?: number
+                y?: number
+                width?: number
+                index?: number
+                value?: number
+              }
+              if (index !== lastIndex || !value) return null
+              return (
+                <text
+                  x={Number(x) + Number(width) / 2}
+                  y={Number(y) - 6}
+                  fill="#cfe0ff"
+                  fontSize={11}
+                  fontWeight={500}
+                  textAnchor="middle"
+                >
+                  {value}
+                </text>
+              )
+            }}
+          />
+        </Bar>
+        <Line
           type="monotone"
           dataKey="dikembalikan"
           name="Dikembalikan"
-          stroke="#7928ca"
-          strokeWidth={2}
-          fill="url(#colorDikembalikan)"
+          stroke="#a855f7"
+          strokeWidth={2.5}
+          dot={{ r: 3, fill: '#a855f7', strokeWidth: 0 }}
+          activeDot={{ r: 5 }}
         />
-      </AreaChart>
+      </ComposedChart>
     </ResponsiveContainer>
   )
 }

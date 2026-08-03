@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { rules } from '@/lib/rules'
+import { PasswordInput } from '@/components/shared/PasswordInput'
 
 type Pill = { val: string; label: string }
 const TINGKAT: Pill[] = [
@@ -49,7 +50,6 @@ export default function RegisterForm() {
   const [jurusan, setJurusan] = useState<string | null>(null)
   const [rombel, setRombel] = useState<string | null>(null)
   const [password, setPassword] = useState('')
-  const [showPass, setShowPass] = useState(false)
 
   const [agreed, setAgreed] = useState(false)
   const [checked, setChecked] = useState(false)
@@ -295,18 +295,8 @@ export default function RegisterForm() {
           </div>
 
           <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <label className="text-sm text-neutral-300">Password</label>
-              <button
-                type="button"
-                onClick={() => setShowPass((v) => !v)}
-                className="text-xs font-semibold text-blue-400 hover:text-blue-300"
-              >
-                {showPass ? 'Sembunyikan' : 'Lihat'}
-              </button>
-            </div>
-            <input
-              type={showPass ? 'text' : 'password'}
+            <label className="mb-1.5 block text-sm text-neutral-300">Password</label>
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimal 8 karakter"

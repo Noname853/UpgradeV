@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import { PackageCheck, ArrowLeft, Search, X } from 'lucide-react'
 import Link from 'next/link'
+import { Pagination } from '@/components/shared/Pagination'
 
 const ARCHIVE_DAYS = 30
 
@@ -251,27 +252,14 @@ export default async function ArsipPeminjamanPage({ searchParams }: { searchPara
         )}
       </div>
 
-      {pages > 1 && (
-        <div className="mt-[18px] flex flex-wrap justify-center gap-2">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
-            const active = p === page
-            return (
-              <Link
-                key={p}
-                href={`/peminjaman/arsip${buildQueryString({ search, kelas: kelasFilter, page: String(p) })}`}
-                className="min-w-[40px] px-3 py-2 text-center text-[13px] hud-clip-sm"
-                style={
-                  active
-                    ? { color: '#fff', background: 'linear-gradient(135deg, #2563eb, #9333ea)' }
-                    : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
-                }
-              >
-                {p}
-              </Link>
-            )
-          })}
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pages={pages}
+        hrefs={Array.from(
+          { length: pages },
+          (_, i) => `/peminjaman/arsip${buildQueryString({ search, kelas: kelasFilter, page: String(i + 1) })}`,
+        )}
+      />
     </div>
   )
 }

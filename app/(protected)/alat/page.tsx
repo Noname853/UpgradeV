@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Plus, Search, Package, FileSpreadsheet, QrCode } from 'lucide-react'
 import Link from 'next/link'
+import { Pagination } from '@/components/shared/Pagination'
 
 const AKTIF = ['menunggu_verifikasi', 'dipinjam']
 
@@ -155,22 +156,14 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
 
   const renderPagination = () => (
     pages > 1 && (
-      <div className="mt-[18px] flex flex-wrap justify-center gap-2">
-        {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-          <Link
-            key={p}
-            href={`/alat?${new URLSearchParams({ ...(search && { search }), ...(kategori && { kategori }), page: String(p) })}`}
-            className="hud-clip-sm min-w-[40px] px-3 py-2 text-center text-sm"
-            style={
-              p === page
-                ? { background: 'linear-gradient(135deg, #2563eb, #9333ea)', color: '#fff' }
-                : { color: '#8a97a3', border: '1px solid rgba(99,102,241,0.25)' }
-            }
-          >
-            {p}
-          </Link>
-        ))}
-      </div>
+      <Pagination
+        page={page}
+        pages={pages}
+        hrefs={Array.from(
+          { length: pages },
+          (_, i) => `/alat?${new URLSearchParams({ ...(search && { search }), ...(kategori && { kategori }), page: String(i + 1) })}`,
+        )}
+      />
     )
   )
 

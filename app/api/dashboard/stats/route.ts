@@ -13,7 +13,7 @@ export async function GET() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
   if (isAdmin) {
-    const [totalAlat, totalUser, peminjamanAktif, menungguVerifikasi, stokRendah, dikembalikanBulanIni, chartData] =
+    const [totalAlat, totalUser, peminjamanAktif, menungguVerifikasi, stokRendah, dikembalikanBulanIni] =
       await Promise.all([
         prisma.alat.count(),
         prisma.user.count({ where: { role: 'siswa' } }),
@@ -23,7 +23,6 @@ export async function GET() {
         prisma.peminjaman.count({
           where: { status: 'dikembalikan', tanggalKembali: { gte: startOfMonth } },
         }),
-        getChartData(),
       ])
 
     return NextResponse.json({
@@ -33,7 +32,6 @@ export async function GET() {
       menungguVerifikasi,
       stokRendah,
       dikembalikanBulanIni,
-      chartData,
     })
   } else {
     const [peminjamanAktif, menungguVerifikasi, totalPeminjaman] = await Promise.all([
@@ -44,29 +42,4 @@ export async function GET() {
 
     return NextResponse.json({ peminjamanAktif, menungguVerifikasi, totalPeminjaman })
   }
-}
-
-async function getChartData() {
-  const months = []
-  const now = new Date()
-
-  for (let i = 5; i >= 0; i--) {
-    const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
-
-    const [peminjaman, dikembalikan] = await Promise.all([
-      prisma.peminjaman.count({ where: { tanggalPinjam: { gte: start, lte: end } } }),
-      prisma.peminjaman.count({
-        where: { status: 'dikembalikan', tanggalKembali: { gte: start, lte: end } },
-      }),
-    ])
-
-    months.push({
-      bulan: start.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
-      peminjaman,
-      dikembalikan,
-    })
-  }
-
-  return months
 }

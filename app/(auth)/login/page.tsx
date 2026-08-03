@@ -6,6 +6,7 @@ import { checkRateLimit, clientIp } from '@/lib/rate-limit'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { IsiDemoButtons } from './IsiDemoButtons'
+import { PasswordInput } from '@/components/shared/PasswordInput'
 
 export default async function LoginPage({
   searchParams,
@@ -99,10 +100,9 @@ export default async function LoginPage({
           </div>
           <div>
             <label className="mb-1.5 block text-sm text-neutral-300">Password</label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               required
               placeholder="••••••••"
               className="tf-input w-full rounded-lg border border-neutral-700 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-neutral-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
