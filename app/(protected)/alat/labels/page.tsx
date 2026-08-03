@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import QRCode from 'qrcode'
 import Link from 'next/link'
-import { ArrowLeft, QrCode } from 'lucide-react'
+import { ArrowLeft, FileSpreadsheet, QrCode } from 'lucide-react'
 import { PrintButton } from './PrintButton'
 
 interface SearchParams {
@@ -75,6 +75,13 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
             Cetak ke kertas stiker A4 dengan printer biasa, lalu tempel di tiap unit
           </p>
         </div>
+        <a
+          href={`/api/alat/qr-excel${alatId ? `?alatId=${alatId}` : ''}`}
+          className="hud-btn-secondary inline-flex items-center gap-2 px-4 py-2.5 text-[11.5px]"
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          EXCEL
+        </a>
         <PrintButton />
       </div>
 
