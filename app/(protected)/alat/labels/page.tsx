@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import QRCode from 'qrcode'
 import Link from 'next/link'
-import { ArrowLeft, QrCode } from 'lucide-react'
+import { ArrowLeft, Download, QrCode } from 'lucide-react'
 import { PrintButton } from './PrintButton'
 
 interface SearchParams {
@@ -119,8 +119,20 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
                 key={l.id}
                 className="flex flex-col items-center rounded-lg border border-dashed border-[#c9c9c2] bg-white px-2 py-3 text-center break-inside-avoid"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- data URI lokal, next/image tidak relevan */}
-                <img src={l.qr} alt={`QR ${l.kode}`} width={96} height={96} className="h-24 w-24" />
+                {/* Data URI PNG bisa langsung diunduh lewat anchor download —
+                    klik QR = simpan file QR-<kode>.png. Nonaktif saat cetak. */}
+                <a
+                  href={l.qr}
+                  download={`QR-${l.kode}.png`}
+                  title={`Unduh QR ${l.kode} (PNG)`}
+                  className="group relative cursor-pointer rounded-md transition hover:ring-2 hover:ring-indigo-500/60 print:pointer-events-none print:ring-0"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URI lokal, next/image tidak relevan */}
+                  <img src={l.qr} alt={`QR ${l.kode}`} width={96} height={96} className="h-24 w-24" />
+                  <span className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded bg-indigo-600 text-white opacity-0 shadow transition group-hover:opacity-100 print:hidden">
+                    <Download className="h-3 w-3" />
+                  </span>
+                </a>
                 <p className="mt-1.5 font-mono text-[12.5px] font-bold tracking-wide text-black">{l.kode}</p>
                 <p className="mt-0.5 text-[10.5px] text-neutral-500">{l.alatNama}</p>
               </div>
@@ -130,7 +142,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
       )}
 
       <p className="mt-4 text-center text-[12px] print:hidden" style={{ color: '#6b7785' }}>
-        {labels.length} label · Tips: lapisi stiker dengan lakban bening agar tahan lama
+        {labels.length} label · Klik QR untuk unduh PNG-nya · Tips: lapisi stiker dengan lakban bening agar tahan lama
       </p>
     </div>
   )
