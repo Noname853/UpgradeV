@@ -30,13 +30,13 @@ export function ActivityChart({ data }: { data: ChartData[] }) {
     <ResponsiveContainer width="100%" height={240}>
       <ComposedChart data={data} margin={{ top: 22, right: 10, left: -20, bottom: 0 }}>
         <defs>
-          <linearGradient id="barPeminjaman" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6f97ff" />
-            <stop offset="100%" stopColor="#3f63d6" />
+          <linearGradient id="barDikembalikan" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#c084fc" />
+            <stop offset="100%" stopColor="#7e22ce" />
           </linearGradient>
           <linearGradient id="barToday" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8ab4ff" />
-            <stop offset="100%" stopColor="#5c84ff" />
+            <stop offset="0%" stopColor="#d8b4fe" />
+            <stop offset="100%" stopColor="#a855f7" />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
@@ -59,12 +59,12 @@ export function ActivityChart({ data }: { data: ChartData[] }) {
           labelFormatter={(v) => `Tanggal ${v}`}
         />
         <Legend wrapperStyle={{ color: '#8a8a8a', fontSize: 12 }} />
-        <Bar dataKey="peminjaman" name="Peminjaman" fill="#5c84ff" radius={[4, 4, 0, 0]} maxBarSize={26}>
+        <Bar dataKey="dikembalikan" name="Dikembalikan" fill="#a855f7" radius={[4, 4, 0, 0]} maxBarSize={26}>
           {data.map((_, i) => (
-            <Cell key={i} fill={i === lastIndex ? 'url(#barToday)' : 'url(#barPeminjaman)'} />
+            <Cell key={i} fill={i === lastIndex ? 'url(#barToday)' : 'url(#barDikembalikan)'} />
           ))}
           <LabelList
-            dataKey="peminjaman"
+            dataKey="dikembalikan"
             content={(p) => {
               const { x = 0, y = 0, width = 0, index = 0, value } = p as {
                 x?: number
@@ -78,7 +78,7 @@ export function ActivityChart({ data }: { data: ChartData[] }) {
                 <text
                   x={Number(x) + Number(width) / 2}
                   y={Number(y) - 6}
-                  fill="#cfe0ff"
+                  fill="#e9d5ff"
                   fontSize={11}
                   fontWeight={500}
                   textAnchor="middle"
@@ -91,11 +91,11 @@ export function ActivityChart({ data }: { data: ChartData[] }) {
         </Bar>
         <Line
           type="monotone"
-          dataKey="dikembalikan"
-          name="Dikembalikan"
-          stroke="#a855f7"
+          dataKey="peminjaman"
+          name="Peminjaman"
+          stroke="#5c84ff"
           strokeWidth={2.5}
-          dot={{ r: 3, fill: '#a855f7', strokeWidth: 0 }}
+          dot={{ r: 3, fill: '#5c84ff', strokeWidth: 0 }}
           activeDot={{ r: 5 }}
         />
       </ComposedChart>
