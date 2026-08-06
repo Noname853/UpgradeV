@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
-import { Users, Plus, Search } from 'lucide-react'
+import { Users, Plus, Search, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { DeleteUserButton } from './DeleteUserButton'
 import { Pagination } from '@/components/shared/Pagination'
@@ -76,13 +76,22 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             {total} pengguna {showAll ? 'total' : 'aktif'}
           </p>
         </div>
-        <Link
-          href="/users/baru"
-          className="hud-btn-primary flex items-center gap-2 px-[18px] py-2.5 text-[12px]"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah User
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/users/import"
+            className="hud-btn-ghost flex items-center gap-2 px-[18px] py-2.5 text-[12px]"
+          >
+            <Upload className="h-4 w-4" />
+            Import Excel
+          </Link>
+          <Link
+            href="/users/baru"
+            className="hud-btn-primary flex items-center gap-2 px-[18px] py-2.5 text-[12px]"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah User
+          </Link>
+        </div>
       </div>
 
       <div className="mb-[18px] flex flex-col gap-3 sm:flex-row sm:items-stretch hud-rise">

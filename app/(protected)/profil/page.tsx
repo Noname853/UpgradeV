@@ -120,8 +120,8 @@ export default async function ProfilPage() {
         </div>
       )}
 
-      {/* keluar */}
-      <div className="mt-4 hud-rise">
+      {/* keluar — hanya mobile; desktop pakai tombol keluar di sidebar */}
+      <div className="mt-4 hud-rise md:hidden">
         <KeluarButton isAdmin={user.role === 'admin'} />
       </div>
     </div>
