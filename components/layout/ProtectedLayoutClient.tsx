@@ -6,6 +6,7 @@ import { Sidebar, type SidebarStats } from './Sidebar'
 import { Topbar } from './Topbar'
 import { MobileAppBar } from './MobileAppBar'
 import { MobileBottomNav } from './MobileBottomNav'
+import { PageTour } from '@/components/shared/PageTour'
 
 interface Props {
   children: React.ReactNode
@@ -52,6 +53,7 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
       className="hud-root flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible"
       style={{ background: 'var(--hud-bg)', height: '100dvh' }}
     >
+      <PageTour role={userRole} />
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0 print:hidden">
         <Sidebar role={userRole} userName={userName} userKelas={userKelas} stats={stats} />
@@ -85,7 +87,7 @@ export function ProtectedLayoutClient({ children, userName, userRole, userKelas 
       <div className="relative flex flex-1 flex-col overflow-hidden print:block print:overflow-visible">
         {/* Topbar (desktop) */}
         <div className="hidden md:block print:hidden">
-          <Topbar onMenuToggle={() => setMobileOpen(true)} />
+          <Topbar onMenuToggle={() => setMobileOpen(true)} role={userRole} />
         </div>
 
         {/* App bar (mobile) */}

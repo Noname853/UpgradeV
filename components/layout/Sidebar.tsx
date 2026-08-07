@@ -285,7 +285,7 @@ export function Sidebar({ role, userName, userKelas, stats, onNavigate, onClose 
         </div>
 
         {/* nav */}
-        <nav className="flex flex-col gap-[4px]">
+        <nav className="flex flex-col gap-[4px]" data-tour="side-nav">
           {items.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/')
             return (

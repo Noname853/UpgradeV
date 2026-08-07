@@ -369,7 +369,7 @@ export default function BuatPeminjamanPage() {
         <div className="grid items-start gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
           <div className="space-y-3.5 lg:col-span-2">
             {/* Search alat */}
-            <div className="hud-panel p-[22px]">
+            <div className="hud-panel p-[22px]" data-tour="baru-tambah">
               <h2 className="hud-label mb-3 text-[12px]" style={{ color: '#c3ccd6' }}>Tambah Alat</h2>
               <div className="flex gap-2.5">
                 <div className="relative flex-1">
@@ -386,6 +386,7 @@ export default function BuatPeminjamanPage() {
                 </div>
                 <button
                   type="button"
+                  data-tour="baru-scan"
                   onClick={() => setScanOpen(true)}
                   className="hud-clip-sm inline-flex shrink-0 items-center gap-2 px-3.5 text-[13px] font-semibold"
                   style={{
@@ -591,7 +592,7 @@ export default function BuatPeminjamanPage() {
               </div>
             )}
 
-            <div className="hud-panel p-[18px]">
+            <div className="hud-panel p-[18px]" data-tour="baru-info">
               <h2 className="hud-label mb-3.5 text-[11px]" style={{ color: '#c3ccd6' }}>Informasi Peminjaman</h2>
               <div className="space-y-3">
                 <div>
@@ -661,6 +662,7 @@ export default function BuatPeminjamanPage() {
 
             <button
               type="submit"
+              data-tour="baru-submit"
               disabled={loading || submitTerkunci || items.length === 0 || totalUnitDipilih === 0}
               className="hud-btn-primary w-full px-[18px] py-3 text-[12px] disabled:cursor-not-allowed disabled:opacity-40"
             >

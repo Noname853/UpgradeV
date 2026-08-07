@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { isBackPage, titleForPath } from './mobile-shell-utils'
 import { NotifikasiBell } from './NotifikasiBell'
+import { tourKeyFor } from '@/lib/tours'
 
 interface Props {
   isAdmin: boolean
@@ -19,6 +20,7 @@ export function MobileAppBar({ isAdmin, onMenu }: Props) {
   const back = isBackPage(pathname)
   const title = titleForPath(pathname, isAdmin)
   const showLead = back || isAdmin
+  const hasTour = tourKeyFor(pathname, isAdmin ? 'admin' : 'siswa') !== null
 
   const leadClip =
     'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)'
@@ -31,6 +33,7 @@ export function MobileAppBar({ isAdmin, onMenu }: Props) {
       {showLead && (
         <button
           type="button"
+          data-tour={back ? undefined : 'menu'}
           onClick={() => (back ? router.back() : onMenu())}
           aria-label={back ? 'Kembali' : 'Buka menu'}
           className="hud-press flex h-10 w-10 flex-none items-center justify-center"
@@ -45,6 +48,23 @@ export function MobileAppBar({ isAdmin, onMenu }: Props) {
               <path d="M3 6h18M3 12h18M3 18h18" />
             </svg>
           )}
+        </button>
+      )}
+
+      {hasTour && (
+        <button
+          type="button"
+          data-tour="help"
+          onClick={() => window.dispatchEvent(new CustomEvent('replay-tour'))}
+          aria-label="Panduan halaman ini"
+          className="hud-press flex h-10 w-10 flex-none items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.16)', color: '#9bb3ff', clipPath: leadClip }}
+        >
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
         </button>
       )}
 

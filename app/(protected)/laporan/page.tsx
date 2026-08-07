@@ -139,14 +139,14 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
           </a>
         </div>
         {/* Tombol export mobile — baris terpisah supaya tidak niban judul */}
-        <a href={exportHref} className="hud-btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-[12px] md:hidden">
+        <a href={exportHref} data-tour="laporan-export" className="hud-btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-[12px] md:hidden">
           <Download className="h-4 w-4" />
           EXPORT EXCEL
         </a>
       </div>
 
       {/* Filters */}
-      <div className="hud-panel mb-[18px] p-[18px] hud-rise">
+      <div className="hud-panel mb-[18px] p-[18px] hud-rise" data-tour="laporan-filter">
         <form className="grid items-end gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <div>
             <label className="hud-label mb-1.5 block text-[11px]" style={{ color: '#8a97a3' }}>Status</label>
@@ -193,6 +193,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
       <div
         className="mb-[18px] grid gap-[13px]"
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}
+        data-tour="laporan-stats"
       >
         {statCards.map((s) => (
           <div

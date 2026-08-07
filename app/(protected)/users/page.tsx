@@ -76,7 +76,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             {total} pengguna {showAll ? 'total' : 'aktif'}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5" data-tour="users-actions">
           <Link
             href="/users/import"
             className="hud-btn-ghost flex items-center gap-2 px-[18px] py-2.5 text-[12px]"
@@ -95,7 +95,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </div>
 
       <div className="mb-[18px] flex flex-col gap-3 sm:flex-row sm:items-stretch hud-rise">
-        <form className="flex flex-1 flex-wrap gap-[11px]">
+        <form className="flex flex-1 flex-wrap gap-[11px]" data-tour="users-search">
           <div className="relative min-w-[200px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#6b7785' }} />
             <input
@@ -133,7 +133,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </div>
 
       {/* Mobile: daftar kartu (tabel disembunyikan di HP) */}
-      <div className="flex flex-col gap-2.5 md:hidden hud-rise">
+      <div className="flex flex-col gap-2.5 md:hidden hud-rise" data-tour="users-list">
         {users.map((u) => (
           <div key={u.id} className="hud-panel p-4" style={{ opacity: u.isActive ? 1 : 0.55 }}>
             <div className="flex items-center gap-3">
@@ -183,7 +183,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </div>
 
       {/* Desktop: tabel */}
-      <div className="hidden hud-panel hud-rise overflow-hidden md:block">
+      <div className="hidden hud-panel hud-rise overflow-hidden md:block" data-tour="users-table">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] border-collapse">
             <thead>

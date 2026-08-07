@@ -203,7 +203,7 @@ export function InventarisLabClient({ sheets }: Props) {
             Sensus kondisi &amp; stok per lab — data dari file Excel yang diimpor
           </p>
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-2.5" data-tour="lab-actions">
           <a href={exportUrl} className="hud-btn-ghost flex items-center gap-2 px-4 py-2.5 text-[12px]">
             <Download className="h-4 w-4" />
             Export Excel
@@ -231,7 +231,7 @@ export function InventarisLabClient({ sheets }: Props) {
       ) : (
         <>
           {/* tab per sheet — scroll horizontal di HP */}
-          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0" data-tour="lab-sheets">
             {sheets.map((s) => (
               <button
                 key={s.id}

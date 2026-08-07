@@ -57,7 +57,7 @@ export default async function ProfilPage() {
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}
       >
         {/* account — untuk admin disembunyikan di mobile (tampil hanya desktop) */}
-        <div className={`hud-panel hud-accent-top hud-rise p-[22px]${isAdmin ? ' hidden md:block' : ''}`}>
+        <div data-tour="profil-info" className={`hud-panel hud-accent-top hud-rise p-[22px]${isAdmin ? ' hidden md:block' : ''}`}>
           <div className="mb-5 flex items-center gap-3.5">
             <div
               className="hud-hex flex shrink-0 items-center justify-center"
@@ -104,7 +104,11 @@ export default async function ProfilPage() {
         </div>
 
         {/* Kelompok hanya untuk siswa — admin tidak punya kelompok/anggota. */}
-        {!isAdmin && <ProfilForm kelompok={user.kelompok} anggota={anggota} />}
+        {!isAdmin && (
+          <div data-tour="profil-kelompok">
+            <ProfilForm kelompok={user.kelompok} anggota={anggota} />
+          </div>
+        )}
       </div>
 
       {/* Pengaturan sistem (admin) */}
@@ -113,15 +117,19 @@ export default async function ProfilPage() {
           <h2 className="hud-title mb-3" style={{ fontSize: 16 }}>Pengaturan Sistem</h2>
 
           {/* Sesi peminjaman */}
-          <BookingToggle initial={pengaturan.bookingDibuka} />
+          <div data-tour="pengaturan-booking">
+            <BookingToggle initial={pengaturan.bookingDibuka} />
+          </div>
 
           {/* Jam operasional, aturan, otomatisasi — editable */}
-          <PengaturanForm initial={pengaturan} />
+          <div data-tour="pengaturan-form">
+            <PengaturanForm initial={pengaturan} />
+          </div>
         </div>
       )}
 
       {/* keluar — hanya mobile; desktop pakai tombol keluar di sidebar */}
-      <div className="mt-4 hud-rise md:hidden">
+      <div className="mt-4 hud-rise md:hidden" data-tour="profil-keluar">
         <KeluarButton isAdmin={user.role === 'admin'} />
       </div>
     </div>

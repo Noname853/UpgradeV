@@ -107,7 +107,7 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
   const renderFilters = () => (
     <div className="mb-[18px] hud-rise">
       {/* Search */}
-      <form className="relative mb-3">
+      <form className="relative mb-3" data-tour="alat-search">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: '#6b7785' }} />
         <input
           name="search"
@@ -119,7 +119,7 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
       </form>
 
       {/* Chip kategori — scroll horizontal */}
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0" data-tour="alat-kategori">
         {[{ kategori: '' }, ...kategoris].map((k) => {
           const active = kategori === k.kategori
           return (
@@ -148,7 +148,7 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
         <p>Tidak ada alat ditemukan</p>
       </div>
     ) : (
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+      <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }} data-tour="alat-list">
         {alats.map(renderCard)}
       </div>
     )
@@ -175,7 +175,7 @@ export default async function AlatPage({ searchParams }: { searchParams: Promise
             <h1 className="hud-title" style={{ fontSize: 24 }}>Manajemen Alat</h1>
             <p className="mt-1.5 text-[14px]" style={{ color: '#8a97a3' }}>{total} jenis alat terdaftar</p>
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-2.5" data-tour="alat-actions">
             <Link href="/alat/labels" className="hud-btn-ghost flex items-center gap-2 px-4 py-2.5 text-[12px]">
               <QrCode className="h-4 w-4" />
               <span className="hidden sm:inline">Label QR</span>

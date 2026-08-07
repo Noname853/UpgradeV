@@ -248,3 +248,51 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3d3d3d;
 }
+
+/* Tema gelap (HUD) untuk popover tur panduan (driver.js) */
+.driver-popover.hud-tour {
+  background: #12141d;
+  color: #e8edf2;
+  border: 1px solid rgba(92, 132, 255, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+  max-width: 300px;
+}
+.driver-popover.hud-tour .driver-popover-title {
+  color: #f0f4f8;
+  font-weight: 600;
+}
+.driver-popover.hud-tour .driver-popover-description {
+  color: #9fb0d8;
+  line-height: 1.6;
+}
+.driver-popover.hud-tour .driver-popover-progress-text {
+  color: #6b7785;
+}
+.driver-popover.hud-tour .driver-popover-close-btn {
+  color: #8a97a3;
+}
+.driver-popover.hud-tour button {
+  background: rgba(255, 255, 255, 0.04);
+  color: #c3ccd6;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  text-shadow: none;
+  border-radius: 7px;
+}
+.driver-popover.hud-tour .driver-popover-next-btn {
+  background: linear-gradient(135deg, #2563eb, #9333ea);
+  color: #fff;
+  border: none;
+}
+.driver-popover.hud-tour .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: #12141d;
+}
+.driver-popover.hud-tour .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: #12141d;
+}
+.driver-popover.hud-tour .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: #12141d;
+}
+.driver-popover.hud-tour .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: #12141d;
+}

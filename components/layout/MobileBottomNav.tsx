@@ -83,6 +83,7 @@ export function MobileBottomNav({ isAdmin }: { isAdmin: boolean }) {
     return (
       <Link
         href={tab.href}
+        data-tour={`nav-${tab.key}`}
         className="flex flex-1 flex-col items-center gap-1 py-2"
         style={{ color: active ? '#5c84ff' : '#5d6773' }}
         aria-current={active ? 'page' : undefined}
@@ -130,6 +131,7 @@ export function MobileBottomNav({ isAdmin }: { isAdmin: boolean }) {
           />
           <button
             type="button"
+            data-tour="fab"
             aria-label={isAdmin ? 'Scan pengembalian' : 'Buat peminjaman'}
             onClick={() => (isAdmin ? setScanOpen(true) : router.push('/peminjaman/baru?scan=1'))}
             className="hud-press relative flex items-center justify-center"

@@ -202,7 +202,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         </div>
 
         {/* Status tabs — mobile: chip scroll */}
-        <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 md:hidden">
+        <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 md:hidden" data-tour="admin-pinjam-status">
           {STATUS_TABS.map((tab) => {
             const active = status === tab.value
             const count = tab.value ? countMap[tab.value] : total
@@ -223,7 +223,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         </div>
 
         {/* Status tabs — desktop */}
-        <div className="hidden md:block">
+        <div className="hidden md:block" data-tour="pinjam-status-d">
           <div
             className="mb-[18px] inline-flex gap-1 p-[5px] hud-clip-md"
             style={{ border: '1px solid rgba(99,102,241,0.16)', background: 'rgba(255,255,255,0.02)' }}
@@ -258,7 +258,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         </div>
 
         {/* Filter kelas — mobile: chip ringkas */}
-        <div className="mb-4 flex items-center gap-2 md:hidden">
+        <div className="mb-4 flex items-center gap-2 md:hidden" data-tour="admin-pinjam-kelas">
           <span className="flex flex-none items-center gap-1 text-[11px]" style={{ color: '#6b7785' }}>
             <Users className="h-3.5 w-3.5" /> Kelas
           </span>
@@ -403,10 +403,12 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
         )}
 
         {/* Mobile: kartu + bottom sheet detail */}
-        <PeminjamanSheetList items={sheetItems} isAdmin />
+        <div data-tour="admin-pinjam-list">
+          <PeminjamanSheetList items={sheetItems} isAdmin />
+        </div>
 
         {/* Desktop: tabel */}
-        <div className="hidden hud-panel overflow-x-auto md:block">
+        <div className="hidden hud-panel overflow-x-auto md:block" data-tour="pinjam-table-d">
           <table className="w-full min-w-[680px] border-collapse">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(99,102,241,0.16)' }}>
@@ -488,7 +490,7 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
       </div>
 
       {/* Status tabs */}
-      <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+      <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0" data-tour="pinjam-status">
         <div
           className="mb-[18px] inline-flex gap-1 p-[5px] hud-clip-md"
           style={{ border: '1px solid rgba(99,102,241,0.16)', background: 'rgba(255,255,255,0.02)' }}
@@ -514,7 +516,9 @@ export default async function PeminjamanPage({ searchParams }: { searchParams: P
       </div>
 
       {/* Mobile: kartu + bottom sheet detail */}
-      <PeminjamanSheetList items={sheetItems} isAdmin={false} />
+      <div data-tour="pinjam-list">
+        <PeminjamanSheetList items={sheetItems} isAdmin={false} />
+      </div>
 
       {/* Desktop: tabel */}
       <div className="hidden hud-panel overflow-x-auto md:block">
